@@ -5,125 +5,249 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TempMail Pro — Generator Email Sekali Pakai</title>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:#0a0d14; --panel:rgba(255,255,255,.045); --border:rgba(255,255,255,.09);
-    --text:#e8eaf2; --muted:#8b91a7; --accent:#6366f1; --accent2:#a855f7; --accent3:#ec4899;
-    --green:#34d399; --red:#f87171; --yellow:#fbbf24;
+    --bg:#070a12; --panel:rgba(255,255,255,.04); --panel2:rgba(255,255,255,.07);
+    --border:rgba(255,255,255,.09); --border-strong:rgba(255,255,255,.16);
+    --text:#eef0f8; --muted:#939ab3; --faint:#6b7290;
+    --accent:#6366f1; --accent2:#a855f7; --accent3:#ec4899;
+    --green:#34d399; --amber:#fbbf24; --red:#f87171;
+    --shadow:0 10px 40px rgba(0,0,0,.45);
+    --radius:18px;
   }
-  * { margin:0; box-sizing:border-box; font-family:-apple-system,'Segoe UI',Roboto,sans-serif; }
+  * { margin:0; box-sizing:border-box; }
+  html { scrollbar-color: rgba(255,255,255,.15) transparent; }
+  ::-webkit-scrollbar { width:10px; height:10px; }
+  ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.12); border-radius:99px; border:2px solid transparent; background-clip:content-box; }
+  ::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,.22); background-clip:content-box; }
   body { background:var(--bg); color:var(--text); min-height:100vh;
-    background-image:radial-gradient(600px 300px at 15% -10%, rgba(99,102,241,.22), transparent 60%),
-                     radial-gradient(700px 350px at 90% 0%, rgba(168,85,247,.16), transparent 60%);
-  }
-  .wrap { max-width:1200px; margin:0 auto; padding:28px 20px; }
-  header { display:flex; align-items:center; justify-content:space-between; margin-bottom:26px; flex-wrap:wrap; gap:10px; }
-  .logo { font-size:22px; font-weight:800; letter-spacing:-.3px;
-    background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent3));
+    font-family:'Inter',-apple-system,'Segoe UI',Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+  /* animated background blobs */
+  .blobs { position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none; }
+  .blob { position:absolute; border-radius:50%; filter:blur(90px); opacity:.5; animation:float 22s ease-in-out infinite; }
+  .blob.a { width:480px; height:480px; left:-120px; top:-140px; background:rgba(99,102,241,.28); }
+  .blob.b { width:420px; height:420px; right:-100px; top:-80px; background:rgba(168,85,247,.2); animation-delay:-7s; }
+  .blob.c { width:380px; height:380px; left:35%; bottom:-180px; background:rgba(236,72,153,.14); animation-delay:-14s; }
+  @keyframes float { 0%,100% { transform:translate(0,0) scale(1); } 50% { transform:translate(40px,30px) scale(1.08); } }
+  .wrap { max-width:1240px; margin:0 auto; padding:24px 20px 60px; }
+
+  /* header */
+  header { position:sticky; top:0; z-index:40; display:flex; align-items:center; justify-content:space-between;
+    padding:14px 20px; margin:-24px -20px 26px; background:rgba(7,10,18,.72); backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px); border-bottom:1px solid var(--border); }
+  .logo { display:flex; align-items:center; gap:10px; font-size:19px; font-weight:800; letter-spacing:-.4px; }
+  .logo .mark { width:34px; height:34px; border-radius:10px; display:grid; place-items:center; font-size:17px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2),var(--accent3));
+    box-shadow:0 4px 18px rgba(139,92,246,.45); }
+  .logo span { background:linear-gradient(90deg,#a5b4fc,var(--accent2),#f9a8d4);
     -webkit-background-clip:text; background-clip:text; color:transparent; }
-  .status { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--muted); }
-  .dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); animation:pulse 2s infinite; }
-  @keyframes pulse { 50% { opacity:.4; } }
-  .grid { display:grid; grid-template-columns:380px 1fr; gap:22px; }
-  @media (max-width:900px) { .grid { grid-template-columns:1fr; } }
-  .panel { background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:20px;
-    backdrop-filter:blur(10px); }
-  .panel h2 { font-size:14px; text-transform:uppercase; letter-spacing:1.2px; color:var(--muted); margin-bottom:14px; }
-  label { font-size:12px; color:var(--muted); display:block; margin-bottom:6px; }
-  .row { display:flex; gap:8px; align-items:center; }
-  input[type=text] { width:100%; background:rgba(0,0,0,.35); border:1px solid var(--border); border-radius:10px;
-    padding:11px 12px; color:var(--text); font-size:14px; outline:none; transition:border .15s; }
-  input[type=text]:focus { border-color:var(--accent); }
-  .btn { border:none; border-radius:10px; padding:11px 16px; font-size:14px; font-weight:600; cursor:pointer;
-    color:#fff; transition:transform .1s, filter .15s; white-space:nowrap; }
-  .btn:hover { filter:brightness(1.12); } .btn:active { transform:scale(.97); }
-  .btn.primary { background:linear-gradient(90deg,var(--accent),var(--accent2)); }
-  .btn.ghost { background:rgba(255,255,255,.08); color:var(--text); }
-  .btn.icon { padding:11px 12px; }
-  .btn:disabled { opacity:.5; cursor:not-allowed; }
-  .btn.small { padding:6px 10px; font-size:12px; }
-  .mt { margin-top:12px; }
-  .batch { display:flex; gap:10px; align-items:center; margin-top:12px; }
-  .batch input[type=range] { flex:1; accent-color:var(--accent2); }
-  .batch span { font-size:13px; color:var(--muted); min-width:52px; text-align:right; }
-  .addr-box { margin-top:14px; padding:14px; border:1px dashed var(--border); border-radius:12px;
-    display:flex; align-items:center; justify-content:space-between; gap:10px; background:rgba(99,102,241,.06); }
-  .addr { font-family:ui-monospace,SFMono-Regular,monospace; font-size:13.5px; word-break:break-all; }
-  .ttl { font-size:11px; color:var(--muted); margin-top:8px; }
+  .status { display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--muted);
+    background:var(--panel); border:1px solid var(--border); padding:7px 14px; border-radius:99px; }
+  .dot { width:7px; height:7px; border-radius:50%; background:var(--green);
+    box-shadow:0 0 10px var(--green); animation:pulse 2s infinite; }
+  @keyframes pulse { 50% { opacity:.35; } }
+
+  .grid { display:grid; grid-template-columns:390px 1fr; gap:22px; align-items:start; }
+  @media (max-width:920px) { .grid { grid-template-columns:1fr; } }
+  .panel { background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:22px;
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:var(--shadow);
+    animation:rise .45s cubic-bezier(.2,.7,.3,1) both; }
+  .panel:nth-child(2) { animation-delay:.06s; }
+  @keyframes rise { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+  .panel h2 { font-size:12px; text-transform:uppercase; letter-spacing:1.6px; color:var(--faint);
+    font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+  label { font-size:12px; color:var(--muted); display:block; margin-bottom:7px; font-weight:500; }
+  .row { display:flex; gap:8px; }
+
+  /* inputs */
+  .input-wrap { position:relative; flex:1; }
+  .input-wrap .ic { position:absolute; left:13px; top:50%; transform:translateY(-50%); font-size:14px; opacity:.55; pointer-events:none; }
+  input[type=text] { width:100%; background:rgba(0,0,0,.4); border:1px solid var(--border); border-radius:12px;
+    padding:12px 12px 12px 38px; color:var(--text); font-size:14px; outline:none; font-family:inherit;
+    transition:border-color .18s, box-shadow .18s, background .18s; }
+  input[type=text]:focus { border-color:var(--accent2); background:rgba(0,0,0,.5);
+    box-shadow:0 0 0 3px rgba(168,85,247,.18); }
+  input[type=text]::placeholder { color:var(--faint); }
+
+  .btn { border:none; border-radius:12px; padding:12px 18px; font-size:14px; font-weight:600; cursor:pointer;
+    color:#fff; transition:transform .12s, filter .18s, box-shadow .18s; white-space:nowrap; font-family:inherit;
+    display:inline-flex; align-items:center; justify-content:center; gap:7px; }
+  .btn:hover { filter:brightness(1.14); } .btn:active { transform:scale(.96); }
+  .btn:disabled { opacity:.5; cursor:not-allowed; filter:none; }
+  .btn.primary { background:linear-gradient(135deg,var(--accent),var(--accent2) 60%,var(--accent3));
+    box-shadow:0 6px 24px rgba(139,92,246,.35); position:relative; overflow:hidden; }
+  .btn.primary::after { content:''; position:absolute; inset:0;
+    background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.25) 50%,transparent 70%);
+    transform:translateX(-120%); animation:shine 3.2s ease infinite; }
+  @keyframes shine { 0%,60% { transform:translateX(-120%);} 85%,100% { transform:translateX(120%);} }
+  .btn.ghost { background:var(--panel2); color:var(--text); border:1px solid var(--border); }
+  .btn.ghost:hover { border-color:var(--border-strong); }
+  .btn.icon { padding:12px 13px; }
+  .btn.small { padding:7px 12px; font-size:12px; border-radius:9px; }
+  .mt { margin-top:14px; }
+
+  /* batch slider */
+  .batch { display:flex; gap:12px; align-items:center; margin-top:14px; }
+  .batch label { margin:0; flex:none; }
+  input[type=range] { flex:1; -webkit-appearance:none; appearance:none; height:5px; border-radius:99px;
+    background:linear-gradient(90deg,var(--accent),var(--accent3)); outline:none; cursor:pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; border-radius:50%;
+    background:#fff; border:4px solid var(--accent2); box-shadow:0 2px 10px rgba(168,85,247,.5); cursor:grab; }
+  .batch span { font-size:13px; color:var(--text); font-weight:600; min-width:74px; text-align:right;
+    font-variant-numeric:tabular-nums; }
+
+  /* address box */
+  .addr-box { margin-top:16px; padding:16px; border:1px dashed var(--border-strong); border-radius:14px;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(236,72,153,.06));
+    position:relative; overflow:hidden; }
+  .addr-box::before { content:''; position:absolute; inset:0; border-radius:14px; pointer-events:none;
+    background:linear-gradient(135deg,rgba(165,180,252,.14),transparent 45%); }
+  .addr { font-family:'JetBrains Mono',ui-monospace,monospace; font-size:13px; word-break:break-all; font-weight:500; }
+  .ttl { font-size:11.5px; color:var(--muted); margin-top:9px; }
   .ttl b { color:var(--green); font-variant-numeric:tabular-nums; }
   .ttl.expired b { color:var(--red); }
-  .badge { font-size:10px; font-weight:700; padding:3px 8px; border-radius:99px; letter-spacing:.5px;
-    background:rgba(236,72,153,.16); color:#f9a8d4; flex:none; }
-  .history-item { display:flex; align-items:center; gap:8px; padding:9px 10px; border-radius:10px;
-    cursor:pointer; border:1px solid transparent; font-size:12.5px; margin-bottom:6px; }
-  .history-item:hover { background:rgba(255,255,255,.05); }
-  .history-item.active { border-color:var(--accent); background:rgba(99,102,241,.12); }
-  .history-item.expired { opacity:.45; }
-  .history-item .addr2 { font-family:ui-monospace,monospace; flex:1; word-break:break-all; }
-  .history-item .ttl-mini { font-size:10px; color:var(--muted); font-variant-numeric:tabular-nums; }
-  .x { background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px; padding:2px 5px; }
-  .x:hover { color:var(--red); }
-  .hint { font-size:11px; color:var(--muted); margin-top:10px; line-height:1.5; }
-  .kbd { font-size:10px; color:var(--muted); background:rgba(255,255,255,.07); border:1px solid var(--border);
-    border-radius:4px; padding:1px 5px; }
-  .settings { display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; font-size:12px; color:var(--muted); }
-  .settings label { display:flex; gap:6px; align-items:center; margin:0; cursor:pointer; }
-  .settings input { accent-color:var(--accent2); }
-  .toolbar { display:flex; gap:8px; align-items:center; margin-bottom:12px; flex-wrap:wrap; }
-  .toolbar .addr3 { flex:1; min-width:180px; font-family:ui-monospace,monospace; font-size:12.5px; color:var(--muted);
-    background:rgba(0,0,0,.3); border:1px solid var(--border); border-radius:10px; padding:10px 12px;
-    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  #search { flex:0 0 200px; }
-  @media (max-width:700px) { #search { flex:1 1 100%; } }
-  .filters { display:flex; gap:6px; margin-bottom:12px; }
-  .chip { padding:6px 12px; border-radius:99px; font-size:12px; cursor:pointer; border:1px solid var(--border);
-    background:rgba(255,255,255,.04); color:var(--muted); transition:all .15s; }
-  .chip:hover { color:var(--text); }
-  .chip.on { background:rgba(99,102,241,.25); border-color:var(--accent); color:#fff; }
-  .gsearch { display:flex; gap:6px; align-items:center; font-size:11.5px; color:var(--muted); margin-left:auto; cursor:pointer; }
-  .stats { font-size:11.5px; color:var(--muted); margin-bottom:10px; }
-  .msg { padding:13px 14px; border:1px solid var(--border); border-radius:12px; margin-bottom:9px;
-    cursor:pointer; transition:border-color .15s, background .15s; position:relative; }
-  .msg:hover { border-color:var(--accent); background:rgba(255,255,255,.03); }
-  .msg h3 { font-size:14px; margin-bottom:3px; display:flex; gap:8px; align-items:center; }
-  .msg .unread-dot { width:7px; height:7px; border-radius:50%; background:var(--accent2); flex:none; }
-  .msg .star { flex:none; font-size:13px; cursor:pointer; opacity:.35; }
-  .msg .star.on { opacity:1; color:var(--yellow); }
-  .msg .from { font-size:12.5px; color:var(--muted); }
-  .msg .meta { font-size:11px; color:var(--muted); margin-top:4px; display:flex; gap:12px; }
-  .msg .intro { font-size:12px; color:var(--muted); margin-top:2px; overflow:hidden;
+  .ttlbar { height:3px; border-radius:99px; background:rgba(255,255,255,.08); margin-top:9px; overflow:hidden; }
+  .ttlbar i { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,var(--green),var(--amber));
+    transition:width 1s linear, background 1s; }
+  .ttlbar i.warn { background:linear-gradient(90deg,var(--amber),var(--red)); }
+  .ttlbar i.dead { background:var(--red); }
+
+  .settings { display:flex; flex-wrap:wrap; gap:14px; margin-top:14px; font-size:12.5px; color:var(--muted); }
+  .settings label { display:flex; gap:7px; align-items:center; margin:0; cursor:pointer; user-select:none; }
+  .settings input { accent-color:var(--accent2); width:15px; height:15px; cursor:pointer; }
+  .hint { font-size:11px; color:var(--faint); margin-top:12px; line-height:1.7; }
+  .kbd { font-size:10px; color:var(--muted); background:rgba(255,255,255,.08); border:1px solid var(--border);
+    border-radius:5px; padding:1px 6px; font-family:'JetBrains Mono',monospace; }
+
+  /* history */
+  .history-item { display:flex; align-items:center; gap:9px; padding:10px 11px; border-radius:12px;
+    cursor:pointer; font-size:12.5px; margin-bottom:7px; border:1px solid transparent; position:relative;
+    transition:background .15s, border-color .15s, transform .15s; animation:rise .35s both; }
+  .history-item:hover { background:rgba(255,255,255,.05); transform:translateX(2px); }
+  .history-item.active { border-color:rgba(139,92,246,.55);
+    background:linear-gradient(135deg,rgba(99,102,241,.16),rgba(168,85,247,.08));
+    box-shadow:0 0 0 1px rgba(139,92,246,.25) inset; }
+  .history-item.expired { opacity:.4; }
+  .avatar { width:30px; height:30px; border-radius:9px; display:grid; place-items:center; flex:none;
+    font-size:13px; font-weight:700; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.3); }
+  .history-item .addr2 { font-family:'JetBrains Mono',monospace; flex:1; word-break:break-all; font-size:11.5px; }
+  .ttl-mini { font-size:10px; color:var(--faint); font-variant-numeric:tabular-nums; flex:none; }
+  .x { background:none; border:none; color:var(--faint); cursor:pointer; font-size:13px; padding:3px 6px;
+    border-radius:7px; opacity:0; transition:opacity .15s, color .15s, background .15s; }
+  .history-item:hover .x { opacity:1; }
+  .x:hover { color:#fff; background:rgba(248,113,113,.18); }
+  .x.del:hover { color:#fff; }
+
+  /* inbox toolbar */
+  .toolbar { display:flex; gap:8px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+  .toolbar .addr3 { flex:1; min-width:170px; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text);
+    background:rgba(0,0,0,.35); border:1px solid var(--border); border-radius:12px; padding:11px 13px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:9px; }
+  .toolbar .addr3 .lamp { width:6px; height:6px; border-radius:50%; background:var(--green); flex:none;
+    box-shadow:0 0 8px var(--green); }
+  .toolbar input { flex:0 0 210px; padding-left:36px; }
+  .toolbar .input-wrap { flex:0 0 210px; }
+  @media (max-width:700px) { .toolbar .input-wrap { flex:1 1 100%; } }
+
+  .filters { display:flex; gap:7px; margin-bottom:12px; align-items:center; flex-wrap:wrap; }
+  .chip { padding:7px 14px; border-radius:99px; font-size:12px; font-weight:500; cursor:pointer;
+    border:1px solid var(--border); background:rgba(255,255,255,.04); color:var(--muted);
+    transition:all .16s; user-select:none; }
+  .chip:hover { color:var(--text); border-color:var(--border-strong); }
+  .chip.on { background:linear-gradient(135deg,rgba(99,102,241,.3),rgba(168,85,247,.2));
+    border-color:rgba(139,92,246,.6); color:#fff; box-shadow:0 0 14px rgba(139,92,246,.25); }
+  .gsearch { display:flex; gap:6px; align-items:center; font-size:11.5px; color:var(--faint); margin-left:auto;
+    cursor:pointer; user-select:none; }
+  .gsearch input { accent-color:var(--accent2); }
+  .stats { font-size:11.5px; color:var(--faint); margin-bottom:12px; font-variant-numeric:tabular-nums; }
+
+  /* messages */
+  .msg { padding:14px 15px; border:1px solid var(--border); border-radius:14px; margin-bottom:9px;
+    cursor:pointer; transition:border-color .16s, background .16s, transform .16s, box-shadow .16s;
+    display:flex; gap:12px; align-items:flex-start; animation:rise .3s both; background:rgba(255,255,255,.02); }
+  .msg:hover { border-color:rgba(139,92,246,.5); background:rgba(255,255,255,.045);
+    transform:translateY(-1px); box-shadow:0 6px 22px rgba(0,0,0,.35); }
+  .msg .m-avatar { width:38px; height:38px; border-radius:12px; display:grid; place-items:center; flex:none;
+    font-weight:700; color:#fff; font-size:15px; text-shadow:0 1px 2px rgba(0,0,0,.3);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.12); }
+  .msg .m-body { flex:1; min-width:0; }
+  .msg h3 { font-size:13.5px; font-weight:600; margin-bottom:2px; display:flex; gap:8px; align-items:center; }
+  .msg .unread-dot { width:7px; height:7px; border-radius:50%; background:var(--accent2); flex:none;
+    box-shadow:0 0 8px var(--accent2); animation:pulse 1.6s infinite; }
+  .msg .star { flex:none; font-size:14px; cursor:pointer; opacity:.3; transition:all .15s; }
+  .msg .star:hover { opacity:.8; transform:scale(1.2); }
+  .msg .star.on { opacity:1; color:var(--amber); text-shadow:0 0 10px rgba(251,191,36,.5); }
+  .msg .from { font-size:12px; color:var(--muted); }
+  .msg .meta { font-size:10.5px; color:var(--faint); margin-top:4px; display:flex; gap:12px; }
+  .msg .intro { font-size:11.5px; color:var(--faint); margin-top:3px; overflow:hidden;
     text-overflow:ellipsis; white-space:nowrap; }
-  .empty { color:var(--muted); text-align:center; padding:46px 0; font-size:13.5px; }
+  .new-tag { font-size:9px; font-weight:700; letter-spacing:.6px; color:var(--accent2);
+    border:1px solid rgba(168,85,247,.4); padding:1px 6px; border-radius:99px; flex:none; }
+
+  .empty { color:var(--faint); text-align:center; padding:52px 16px; font-size:13px; line-height:1.8; }
+  .empty .big { font-size:38px; display:block; margin-bottom:10px; filter:grayscale(.2); }
+
+  /* skeleton */
+  .skel { border:1px solid var(--border); border-radius:14px; padding:14px 15px; margin-bottom:9px;
+    display:flex; gap:12px; align-items:center; }
+  .skel .s-av { width:38px; height:38px; border-radius:12px; background:rgba(255,255,255,.07); flex:none;
+    animation:shimmer 1.4s infinite; }
+  .skel .s-line { height:11px; border-radius:6px; background:rgba(255,255,255,.07); margin-bottom:7px;
+    animation:shimmer 1.4s infinite; }
+  @keyframes shimmer { 0%,100% { opacity:.55; } 50% { opacity:1; } }
+
+  /* message view */
   #view { display:none; }
-  #back { background:none; border:none; color:#a5b4fc; cursor:pointer; font-size:13px; padding:0; margin-bottom:14px; }
-  #view-head { margin-bottom:14px; }
-  #view-head h2 { font-size:17px; margin-bottom:6px; }
+  #back { background:none; border:none; color:#a5b4fc; cursor:pointer; font-size:13px; padding:0; margin-bottom:16px;
+    display:inline-flex; align-items:center; gap:6px; transition:gap .15s; font-family:inherit; }
+  #back:hover { gap:10px; }
+  #view-head { margin-bottom:16px; padding:18px 20px; border:1px solid var(--border); border-radius:14px;
+    background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(255,255,255,.02)); }
+  #view-head h2 { font-size:17px; font-weight:700; margin-bottom:7px; line-height:1.35; }
   #view-head .meta { font-size:12.5px; color:var(--muted); margin-bottom:4px; }
-  #view-head .acts { display:flex; gap:8px; margin-top:10px; }
-  #content { background:rgba(0,0,0,.25); border:1px solid var(--border); border-radius:12px; padding:20px;
-    line-height:1.65; font-size:14px; word-wrap:break-word; overflow-wrap:anywhere; }
-  #content img { max-width:100%; height:auto; border-radius:8px; }
+  #view-head .acts { display:flex; gap:8px; margin-top:12px; }
+  #content { background:rgba(0,0,0,.28); border:1px solid var(--border); border-radius:14px; padding:22px;
+    line-height:1.7; font-size:14px; word-wrap:break-word; overflow-wrap:anywhere; animation:rise .3s both; }
+  #content img { max-width:100%; height:auto; border-radius:10px; }
   #content a { color:#a5b4fc; }
-  #content pre { white-space:pre-wrap; font-family:ui-monospace,monospace; }
-  #toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(80px);
-    background:#1c2130; border:1px solid var(--border); padding:11px 18px; border-radius:12px; font-size:13.5px;
-    opacity:0; transition:all .25s; z-index:50; box-shadow:0 8px 30px rgba(0,0,0,.5); }
+  #content pre { white-space:pre-wrap; font-family:'JetBrains Mono',monospace; font-size:12.5px; }
+
+  /* toast */
+  #toast { position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(90px);
+    background:rgba(20,24,36,.92); border:1px solid var(--border-strong); padding:12px 20px; border-radius:14px;
+    font-size:13.5px; opacity:0; transition:all .28s cubic-bezier(.2,.7,.3,1.3); z-index:80;
+    box-shadow:0 12px 40px rgba(0,0,0,.6); backdrop-filter:blur(12px); display:flex; gap:9px; align-items:center; }
   #toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
   .spin { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,.3);
-    border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; vertical-align:-2px; }
-  @keyframes spin { to { transform:rotate(360deg); } }
-  .overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:60; }
-  .overlay.show { display:flex; }
-  .modal { background:#141824; border:1px solid var(--border); border-radius:16px; padding:24px; text-align:center; }
-  .modal h3 { font-size:15px; margin-bottom:12px; }
-  .modal img { border-radius:8px; background:#fff; padding:8px; }
-  .modal .close { margin-top:14px; }
+    border-top-color:#fff; border-radius:50%; animation:spins .7s linear infinite; }
+  @keyframes spins { to { transform:rotate(360deg); } }
+
+  /* modal */
+  .overlay { position:fixed; inset:0; background:rgba(3,5,10,.72); display:none; align-items:center;
+    justify-content:center; z-index:90; backdrop-filter:blur(6px); }
+  .overlay.show { display:flex; animation:fadeIn .2s both; }
+  @keyframes fadeIn { from { opacity:0; } }
+  .modal { background:#141824; border:1px solid var(--border-strong); border-radius:20px; padding:28px;
+    text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.6); animation:pop .3s cubic-bezier(.2,.9,.3,1.2) both; }
+  @keyframes pop { from { opacity:0; transform:scale(.92); } }
+  .modal h3 { font-size:15px; margin-bottom:14px; }
+  .modal img { border-radius:12px; background:#fff; padding:10px; box-shadow:0 6px 24px rgba(0,0,0,.4); }
+  .modal .addr { margin-top:12px; font-size:12px; }
+  .modal .close { margin-top:16px; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
 </style>
 </head>
 <body>
+<div class="blobs"><div class="blob a"></div><div class="blob b"></div><div class="blob c"></div></div>
+
 <div class="wrap">
   <header>
-    <div class="logo">⚡ TempMail Pro</div>
+    <div class="logo"><span class="mark">⚡</span><span>TempMail&nbsp;Pro</span></div>
     <div class="status"><span class="dot"></span> Terhubung · auto-refresh 20 detik</div>
   </header>
 
@@ -132,13 +256,16 @@
     <div>
       <div class="panel">
         <h2>🧪 Generator Alamat</h2>
-        <label for="uname">Username (kosongkan untuk acak)</label>
+        <label for="uname">Username <span style="opacity:.6">— kosongkan untuk acak</span></label>
         <div class="row">
-          <input type="text" id="uname" placeholder="contoh: neonfalcon42" spellcheck="false" autocomplete="off">
+          <div class="input-wrap">
+            <span class="ic">👤</span>
+            <input type="text" id="uname" placeholder="contoh: neonfalcon42" spellcheck="false" autocomplete="off">
+          </div>
           <button class="btn ghost icon" id="dice" title="Acak username">🎲</button>
         </div>
         <div class="batch">
-          <label for="batch" style="margin:0">Batch</label>
+          <label>Batch</label>
           <input type="range" id="batch" min="1" max="5" value="1">
           <span id="batchVal">1 alamat</span>
         </div>
@@ -147,6 +274,7 @@
           <div style="flex:1;min-width:0">
             <div class="addr" id="addr"></div>
             <div class="ttl" id="ttl"></div>
+            <div class="ttlbar"><i id="ttlbar"></i></div>
           </div>
           <button class="btn ghost icon" id="qr" title="QR code">🔳</button>
           <button class="btn ghost icon" id="copy" title="Salin">📋</button>
@@ -156,22 +284,25 @@
           <label><input type="checkbox" id="setSound" checked> Bunyi</label>
           <label><input type="checkbox" id="setNotif"> Notifikasi</label>
         </div>
-        <p class="hint">Shortcut: <span class="kbd">G</span> generate · <span class="kbd">R</span> refresh · <span class="kbd">/</span> cari · <span class="kbd">Esc</span> kembali. Email terhapus otomatis ±1 jam. Data tersimpan di browser.</p>
+        <p class="hint">Shortcut: <span class="kbd">G</span> generate · <span class="kbd">R</span> refresh · <span class="kbd">/</span> cari · <span class="kbd">Esc</span> kembali.<br>Email &amp; inbox terhapus otomatis ±1 jam. Data tersimpan di browser.</p>
       </div>
 
-      <div class="panel mt" style="margin-top:16px">
-        <h2>📒 Alamat Aktif <span class="hint" style="float:right">🗑 = hapus dari server</span></h2>
+      <div class="panel" style="margin-top:18px">
+        <h2>📒 Alamat Aktif <span class="hint" style="float:right;margin:0">🗑 = hapus dari server</span></h2>
         <div id="history"><p class="hint">Belum ada alamat.</p></div>
       </div>
     </div>
 
     <!-- KANAN: INBOX -->
-    <div class="panel">
+    <div class="panel" style="animation-delay:.04s">
       <div id="listView">
         <h2>📥 Inbox</h2>
         <div class="toolbar">
-          <span class="addr3" id="curAddr">—</span>
-          <input type="text" id="search" placeholder="🔍 cari subjek / pengirim...">
+          <span class="addr3" id="curAddr"><span class="lamp"></span>—</span>
+          <div class="input-wrap">
+            <span class="ic">🔍</span>
+            <input type="text" id="search" placeholder="cari subjek / pengirim...">
+          </div>
           <button class="btn icon ghost" id="refresh" title="Muat ulang (R)">🔄</button>
           <button class="btn icon ghost" id="export" title="Export inbox (JSON)">⬇️</button>
         </div>
@@ -179,10 +310,10 @@
           <span class="chip on" data-f="all">Semua</span>
           <span class="chip" data-f="unread">Belum dibaca</span>
           <span class="chip" data-f="starred">⭐ Berbintang</span>
-          <label class="gsearch"><input type="checkbox" id="global"> cari di semua alamat</label>
+          <label class="gsearch"><input type="checkbox" id="global"> cari semua alamat</label>
         </div>
         <div class="stats" id="stats"></div>
-        <div id="inbox"><div class="empty">Generate alamat dulu untuk mulai.</div></div>
+        <div id="inbox"><div class="empty"><span class="big">📭</span>Generate alamat dulu untuk mulai.<br>Email yang masuk akan muncul di sini otomatis.</div></div>
       </div>
       <div id="view">
         <button id="back">← Kembali ke inbox</button>
@@ -197,7 +328,7 @@
   <div class="modal">
     <h3>🔳 Scan untuk salin alamat</h3>
     <img id="qrImg" alt="QR">
-    <div class="addr" style="margin-top:10px" id="qrAddr"></div>
+    <div class="addr" id="qrAddr"></div>
     <button class="btn ghost close" id="qrClose">Tutup</button>
   </div>
 </div>
@@ -206,15 +337,18 @@
 <script>
 const $ = id => document.getElementById(id);
 const GM = 'https://api.guerrillamail.com/ajax.php';
-const LIFETIME = 3600 * 1000; // ±1 jam
+const LIFETIME = 3600 * 1000;
 let addresses = [], active = null, msgs = [], timer = null, cdt = null;
 let filter = 'all', prevCount = {};
-let settings = { auto: false, sound: true, notif: false };
+let settings = { auto:false, sound:true, notif:false };
 let markers = {};
 
 // ---------- utils ----------
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function toast(t) { const e = $('toast'); e.textContent = t; e.classList.add('show'); setTimeout(() => e.classList.remove('show'), 1800); }
+const hue = s => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
+const grad = s => `linear-gradient(135deg,hsl(${hue(s)},72%,52%),hsl(${(hue(s)+60)%360},70%,42%))`;
+const init = s => (String(s).trim().charAt(0) || '?').toUpperCase();
+function toast(t) { const e = $('toast'); e.innerHTML = t; e.classList.add('show'); setTimeout(() => e.classList.remove('show'), 2000); }
 function beep() {
   if (!settings.sound) return;
   try {
@@ -258,7 +392,7 @@ function updateTitle() {
   document.title = (unread ? `(${unread}) ` : '') + 'TempMail Pro';
 }
 
-// ---------- settings & markers (localStorage) ----------
+// ---------- settings & markers ----------
 function saveSettings() { localStorage.setItem('tm_settings', JSON.stringify(settings)); }
 function loadSettings() {
   try { settings = { auto:false, sound:true, notif:false, ...JSON.parse(localStorage.getItem('tm_settings')) }; } catch {}
@@ -280,7 +414,7 @@ $('batch').oninput = () => { $('batchVal').textContent = $('batch').value + ' al
 $('gen').onclick = async () => {
   const local = $('uname').value.trim().toLowerCase().replace(/[^a-z0-9._-]/g,'');
   const n = +$('batch').value;
-  $('gen').disabled = true; $('gen').innerHTML = '<span class="spin"></span> Membuat ' + n + ' alamat...';
+  $('gen').disabled = true; $('gen').innerHTML = '<span class="spin"></span>&nbsp;Membuat ' + n + ' alamat...';
   let ok = 0;
   try {
     for (let i = 0; i < n; i++) {
@@ -300,7 +434,7 @@ $('gen').onclick = async () => {
     save(); renderHistory();
     if (!active) setActive(addresses[0]);
     else renderHistory();
-    toast(ok > 1 ? `✅ ${ok} alamat dibuat` : `✅ Alamat dibuat: ${addresses[0].address}`);
+    toast(ok > 1 ? `✅ ${ok} alamat dibuat` : `✅ Alamat dibuat: <b>${addresses[0].address}</b>`);
   } catch(e) { toast('❌ ' + e.message); }
   $('gen').disabled = false; $('gen').textContent = '⚡ Generate Alamat Email';
 };
@@ -315,13 +449,14 @@ function load() {
 function renderHistory() {
   const h = $('history');
   if (!addresses.length) { h.innerHTML = '<p class="hint">Belum ada alamat.</p>'; return; }
-  h.innerHTML = addresses.map(a => {
+  h.innerHTML = addresses.map((a, i) => {
     const expired = Date.now() - a.createdAt > LIFETIME;
-    return `<div class="history-item ${active && active.address === a.address ? 'active' : ''} ${expired ? 'expired' : ''}" data-addr="${esc(a.address)}">
-       <span class="badge">GM</span>
+    const left = Math.max(0, LIFETIME - (Date.now() - a.createdAt));
+    return `<div class="history-item ${active && active.address === a.address ? 'active' : ''} ${expired ? 'expired' : ''}" data-addr="${esc(a.address)}" style="animation-delay:${i*0.04}s">
+       <span class="avatar" style="background:${grad(a.address)}">${init(a.address)}</span>
        <span class="addr2">${esc(a.address)}</span>
-       <span class="ttl-mini" data-ttl="${esc(a.address)}">${expired ? '⏳ habis' : ''}</span>
-       <button class="x" data-del="${esc(a.address)}" title="Hapus dari server + daftar">🗑</button>
+       <span class="ttl-mini" data-ttl="${esc(a.address)}">${expired ? '⏳ habis' : fmtCountdown(left)}</span>
+       <button class="x del" data-del="${esc(a.address)}" title="Hapus dari server + daftar">🗑</button>
        <button class="x" data-x="${esc(a.address)}" title="Hapus dari daftar">×</button>
      </div>`;
   }).join('');
@@ -334,7 +469,7 @@ function renderHistory() {
   h.querySelectorAll('[data-x]').forEach(b => b.onclick = e => { e.stopPropagation();
     const addr = b.dataset.x;
     addresses = addresses.filter(a => a.address !== addr); save(); renderHistory();
-    if (active && active.address === addr) { active = null; $('curAddr').textContent = '—'; $('inbox').innerHTML = '<div class="empty">Generate alamat dulu untuk mulai.</div>'; stopTimer(); updateTitle(); }
+    if (active && active.address === addr) { active = null; $('curAddr').textContent = '—'; $('inbox').innerHTML = '<div class="empty"><span class="big">📭</span>Generate alamat dulu untuk mulai.<br>Email yang masuk akan muncul di sini otomatis.</div>'; stopTimer(); updateTitle(); }
   });
   h.querySelectorAll('[data-del]').forEach(b => b.onclick = async e => { e.stopPropagation();
     const addr = b.dataset.del;
@@ -342,7 +477,7 @@ function renderHistory() {
     if (!a || !confirm(`Hapus ${addr} dari server guerrillamail? Semua email di inbox-nya ikut terhapus.`)) return;
     try { await gm({ f:'deleteMailbox', sid_token: a.sid }); } catch {}
     addresses = addresses.filter(x => x.address !== addr); save(); renderHistory();
-    if (active && active.address === addr) { active = null; $('curAddr').textContent = '—'; $('inbox').innerHTML = '<div class="empty">Generate alamat dulu untuk mulai.</div>'; stopTimer(); updateTitle(); }
+    if (active && active.address === addr) { active = null; $('curAddr').textContent = '—'; $('inbox').innerHTML = '<div class="empty"><span class="big">📭</span>Generate alamat dulu untuk mulai.<br>Email yang masuk akan muncul di sini otomatis.</div>'; stopTimer(); updateTitle(); }
     toast('🗑 Mailbox dihapus dari server');
   });
 }
@@ -353,20 +488,29 @@ function startCountdown() {
     addresses.forEach(a => {
       const left = LIFETIME - (Date.now() - a.createdAt);
       const el = document.querySelector(`[data-ttl="${CSS.escape(a.address)}"]`);
-      if (el) { el.textContent = left > 0 ? fmtCountdown(left) : '⏳ habis'; }
+      if (el) el.textContent = left > 0 ? fmtCountdown(left) : '⏳ habis';
       if (active && active.address === a.address) {
-        const t = $('ttl');
-        if (left > 0) { t.innerHTML = `⏳ <b>${fmtCountdown(left)}</b> sisa inbox`; t.classList.remove('expired'); }
-        else { t.innerHTML = '⏳ <b>kedaluwarsa</b> — generate alamat baru'; t.classList.add('expired'); }
+        const t = $('ttl'), bar = $('ttlbar');
+        const pct = Math.max(0, Math.min(100, left / LIFETIME * 100));
+        if (left > 0) {
+          t.innerHTML = `⏳ <b>${fmtCountdown(left)}</b> sisa inbox`;
+          t.classList.remove('expired');
+          bar.style.width = pct + '%';
+          bar.className = pct < 10 ? 'dead' : pct < 25 ? 'warn' : '';
+        } else {
+          t.innerHTML = '⏳ <b>kedaluwarsa</b> — generate alamat baru';
+          t.classList.add('expired');
+          bar.style.width = '0%'; bar.className = 'dead';
+        }
         any = true;
       }
     });
-    if (!any) $('ttl').innerHTML = '';
+    if (!any) { $('ttl').innerHTML = ''; }
   }, 1000);
 }
 function setActive(a) {
   active = a; renderHistory();
-  $('curAddr').textContent = a.address;
+  $('curAddr').innerHTML = '<span class="lamp"></span>' + esc(a.address);
   $('addr').textContent = a.address; $('addrBox').style.display = 'flex';
   loadMessages(true);
 }
@@ -382,7 +526,6 @@ $('qr').onclick = () => {
 $('qrClose').onclick = () => $('qrOverlay').classList.remove('show');
 $('qrOverlay').onclick = e => { if (e.target === $('qrOverlay')) $('qrOverlay').classList.remove('show'); };
 
-// ---------- settings UI ----------
 ['setAuto','setSound','setNotif'].forEach(id => $(id).onchange = () => {
   settings = { auto:$('setAuto').checked, sound:$('setSound').checked, notif:$('setNotif').checked };
   saveSettings();
@@ -405,10 +548,10 @@ async function fetchList(a) {
 async function loadMessages(manual) {
   if (!active) return;
   const a = active;
+  if (manual && !msgs.length) $('inbox').innerHTML = Array(3).fill('<div class="skel"><div class="s-av"></div><div style="flex:1"><div class="s-line" style="width:55%"></div><div class="s-line" style="width:80%"></div><div class="s-line" style="width:35%"></div></div></div>').join('');
   try {
     msgs = await fetchList(a);
     if (active !== a) return;
-    // notifikasi email baru
     const unread = msgs.filter(m => !isSeen(a.address, m.id)).length;
     if (prevCount[a.address] !== undefined && msgs.length > prevCount[a.address]) {
       const fresh = msgs.slice(0, msgs.length - prevCount[a.address]);
@@ -421,11 +564,10 @@ async function loadMessages(manual) {
     if (manual) toast('🔄 Inbox dimuat ulang');
     if (!timer) timer = setInterval(loadMessages, 20000);
   } catch(e) {
-    $('inbox').innerHTML = `<div class="empty">Gagal muat: ${esc(e.message)}</div>`;
+    $('inbox').innerHTML = `<div class="empty"><span class="big">⚠️</span>Gagal muat: ${esc(e.message)}</div>`;
   }
 }
 async function globalSearch() {
-  // cari di semua alamat (parallel)
   const q = $('search').value.trim().toLowerCase();
   const results = [];
   await Promise.all(addresses.map(async a => {
@@ -448,16 +590,18 @@ function renderInbox() {
   const unread = msgs.filter(m => !isSeen(active.address, m.id)).length;
   $('stats').textContent = `${msgs.length} pesan · ${unread} belum dibaca${filter !== 'all' ? ` · filter: ${filter}` : ''}`;
   const inbox = $('inbox');
-  if (!list.length) { inbox.innerHTML = '<div class="empty">' + (q ? 'Tidak ada hasil untuk "' + esc(q) + '"' : '📭 Inbox kosong — email baru akan muncul otomatis.') + '</div>'; return; }
-  inbox.innerHTML = list.map(m => {
+  if (!list.length) { inbox.innerHTML = '<div class="empty"><span class="big">' + (q ? '🔍' : '📭') + '</span>' + (q ? 'Tidak ada hasil untuk "' + esc(q) + '"' : 'Inbox kosong — email baru akan muncul otomatis.') + '</div>'; return; }
+  inbox.innerHTML = list.map((m, i) => {
     const seen = isSeen(active.address, m.id), starred = isStarred(active.address, m.id);
-    return `<div class="msg ${seen ? '' : 'unread'}" data-id="${esc(m.id)}">
-       <h3>${seen ? '' : '<span class="unread-dot"></span>'}
-         <span class="star ${starred ? 'on' : ''}" data-star="${esc(m.id)}">★</span>
-         ${esc(m.subject || '(tanpa subjek)')}</h3>
-       <div class="from">${esc(m.from || 'pengirim tak dikenal')}</div>
-       ${m.intro ? `<div class="intro">${esc(m.intro)}</div>` : ''}
-       <div class="meta"><span>${relTime(m.date)}</span>${seen ? '' : '<span style="color:var(--accent2)">● baru</span>'}</div>
+    return `<div class="msg ${seen ? '' : 'unread'}" data-id="${esc(m.id)}" style="animation-delay:${Math.min(i,8)*0.03}s">
+       <span class="m-avatar" style="background:${grad(m.from)}">${init(m.from)}</span>
+       <div class="m-body">
+         <h3>${seen ? '' : '<span class="unread-dot"></span>'}${esc(m.subject || '(tanpa subjek)')}${seen ? '' : '<span class="new-tag">BARU</span>'}</h3>
+         <div class="from">${esc(m.from || 'pengirim tak dikenal')}</div>
+         ${m.intro ? `<div class="intro">${esc(m.intro)}</div>` : ''}
+         <div class="meta"><span>${relTime(m.date)}</span></div>
+       </div>
+       <span class="star ${starred ? 'on' : ''}" data-star="${esc(m.id)}" title="Bintang">★</span>
      </div>`;
   }).join('');
   inbox.querySelectorAll('.msg').forEach(el => el.onclick = e => {
@@ -520,12 +664,15 @@ $('search').oninput = () => {
   if ($('global').checked) globalSearch().then(results => {
     $('stats').textContent = `${results.length} hasil di ${addresses.length} alamat`;
     const inbox = $('inbox');
-    if (!results.length) { inbox.innerHTML = '<div class="empty">Tidak ada hasil.</div>'; return; }
-    inbox.innerHTML = results.map(m =>
-      `<div class="msg" data-addr="${esc(m.addr)}" data-id="${esc(m.id)}">
-         <h3>${esc(m.subject || '(tanpa subjek)')}</h3>
-         <div class="from">${esc(m.from)} <span class="badge" style="margin-left:4px">${esc(m.addr)}</span></div>
-         <div class="meta"><span>${relTime(m.date)}</span></div>
+    if (!results.length) { inbox.innerHTML = '<div class="empty"><span class="big">🔍</span>Tidak ada hasil.</div>'; return; }
+    inbox.innerHTML = results.map((m, i) =>
+      `<div class="msg" data-addr="${esc(m.addr)}" data-id="${esc(m.id)}" style="animation-delay:${Math.min(i,8)*0.03}s">
+         <span class="m-avatar" style="background:${grad(m.from)}">${init(m.from)}</span>
+         <div class="m-body">
+           <h3>${esc(m.subject || '(tanpa subjek)')}</h3>
+           <div class="from">${esc(m.from)} <span class="badge" style="margin-left:4px">${esc(m.addr)}</span></div>
+           <div class="meta"><span>${relTime(m.date)}</span></div>
+         </div>
        </div>`).join('');
     inbox.querySelectorAll('.msg').forEach(el => el.onclick = () => {
       const addr = el.dataset.addr;
