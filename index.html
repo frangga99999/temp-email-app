@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#070a12">
 <title>TempMail Pro — Generator Email Sekali Pakai</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,8 +19,7 @@
     --text:#eef0f8; --muted:#939ab3; --faint:#6b7290;
     --accent:#6366f1; --accent2:#a855f7; --accent3:#ec4899;
     --green:#34d399; --amber:#fbbf24; --red:#f87171;
-    --shadow:0 10px 40px rgba(0,0,0,.45);
-    --radius:18px;
+    --shadow:0 10px 40px rgba(0,0,0,.45); --radius:18px;
   }
   * { margin:0; box-sizing:border-box; }
   html { scrollbar-color: rgba(255,255,255,.15) transparent; }
@@ -26,7 +29,6 @@
   body { background:var(--bg); color:var(--text); min-height:100vh;
     font-family:'Inter',-apple-system,'Segoe UI',Roboto,sans-serif;
     -webkit-font-smoothing:antialiased; overflow-x:hidden; }
-  /* animated background blobs */
   .blobs { position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none; }
   .blob { position:absolute; border-radius:50%; filter:blur(90px); opacity:.5; animation:float 22s ease-in-out infinite; }
   .blob.a { width:480px; height:480px; left:-120px; top:-140px; background:rgba(99,102,241,.28); }
@@ -35,7 +37,6 @@
   @keyframes float { 0%,100% { transform:translate(0,0) scale(1); } 50% { transform:translate(40px,30px) scale(1.08); } }
   .wrap { max-width:1240px; margin:0 auto; padding:24px 20px 60px; }
 
-  /* header */
   header { position:sticky; top:0; z-index:40; display:flex; align-items:center; justify-content:space-between;
     padding:14px 20px; margin:-24px -20px 26px; background:rgba(7,10,18,.72); backdrop-filter:blur(18px);
     -webkit-backdrop-filter:blur(18px); border-bottom:1px solid var(--border); }
@@ -63,7 +64,6 @@
   label { font-size:12px; color:var(--muted); display:block; margin-bottom:7px; font-weight:500; }
   .row { display:flex; gap:8px; }
 
-  /* inputs */
   .input-wrap { position:relative; flex:1; }
   .input-wrap .ic { position:absolute; left:13px; top:50%; transform:translateY(-50%); font-size:14px; opacity:.55; pointer-events:none; }
   input[type=text] { width:100%; background:rgba(0,0,0,.4); border:1px solid var(--border); border-radius:12px;
@@ -72,6 +72,10 @@
   input[type=text]:focus { border-color:var(--accent2); background:rgba(0,0,0,.5);
     box-shadow:0 0 0 3px rgba(168,85,247,.18); }
   input[type=text]::placeholder { color:var(--faint); }
+  select { background:rgba(0,0,0,.4); border:1px solid var(--border); border-radius:10px; padding:10px 10px;
+    color:var(--text); font-size:13px; outline:none; font-family:inherit; cursor:pointer; }
+  select:focus { border-color:var(--accent2); }
+  select option { background:#141824; }
 
   .btn { border:none; border-radius:12px; padding:12px 18px; font-size:14px; font-weight:600; cursor:pointer;
     color:#fff; transition:transform .12s, filter .18s, box-shadow .18s; white-space:nowrap; font-family:inherit;
@@ -90,7 +94,6 @@
   .btn.small { padding:7px 12px; font-size:12px; border-radius:9px; }
   .mt { margin-top:14px; }
 
-  /* batch slider */
   .batch { display:flex; gap:12px; align-items:center; margin-top:14px; }
   .batch label { margin:0; flex:none; }
   input[type=range] { flex:1; -webkit-appearance:none; appearance:none; height:5px; border-radius:99px;
@@ -100,7 +103,6 @@
   .batch span { font-size:13px; color:var(--text); font-weight:600; min-width:74px; text-align:right;
     font-variant-numeric:tabular-nums; }
 
-  /* address box */
   .addr-box { margin-top:16px; padding:16px; border:1px dashed var(--border-strong); border-radius:14px;
     display:flex; align-items:center; justify-content:space-between; gap:10px;
     background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(236,72,153,.06));
@@ -113,18 +115,17 @@
   .ttl.expired b { color:var(--red); }
   .ttlbar { height:3px; border-radius:99px; background:rgba(255,255,255,.08); margin-top:9px; overflow:hidden; }
   .ttlbar i { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,var(--green),var(--amber));
-    transition:width 1s linear, background 1s; }
+    transition:width 1s linear; }
   .ttlbar i.warn { background:linear-gradient(90deg,var(--amber),var(--red)); }
   .ttlbar i.dead { background:var(--red); }
 
   .settings { display:flex; flex-wrap:wrap; gap:14px; margin-top:14px; font-size:12.5px; color:var(--muted); }
   .settings label { display:flex; gap:7px; align-items:center; margin:0; cursor:pointer; user-select:none; }
-  .settings input { accent-color:var(--accent2); width:15px; height:15px; cursor:pointer; }
+  .settings input[type=checkbox] { accent-color:var(--accent2); width:15px; height:15px; cursor:pointer; }
   .hint { font-size:11px; color:var(--faint); margin-top:12px; line-height:1.7; }
   .kbd { font-size:10px; color:var(--muted); background:rgba(255,255,255,.08); border:1px solid var(--border);
     border-radius:5px; padding:1px 6px; font-family:'JetBrains Mono',monospace; }
 
-  /* history */
   .history-item { display:flex; align-items:center; gap:9px; padding:10px 11px; border-radius:12px;
     cursor:pointer; font-size:12.5px; margin-bottom:7px; border:1px solid transparent; position:relative;
     transition:background .15s, border-color .15s, transform .15s; animation:rise .35s both; }
@@ -141,16 +142,27 @@
     border-radius:7px; opacity:0; transition:opacity .15s, color .15s, background .15s; }
   .history-item:hover .x { opacity:1; }
   .x:hover { color:#fff; background:rgba(248,113,113,.18); }
-  .x.del:hover { color:#fff; }
 
-  /* inbox toolbar */
+  /* rules */
+  .rule-row { display:flex; gap:6px; margin-bottom:8px; }
+  .rule-item { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px;
+    border:1px solid var(--border); background:rgba(255,255,255,.03); font-size:11.5px; margin-bottom:6px; }
+  .rule-item .txt { flex:1; color:var(--muted); word-break:break-word; }
+  .rule-item .txt b { color:var(--text); font-weight:600; }
+  .rule-item .onoff { font-size:10px; padding:2px 8px; border-radius:99px; cursor:pointer; border:1px solid var(--border);
+    color:var(--muted); background:none; font-family:inherit; }
+  .rule-item .onoff.on { background:rgba(52,211,153,.15); color:var(--green); border-color:rgba(52,211,153,.4); }
+  .r-action { display:flex; align-items:center; gap:5px; font-size:10.5px; padding:2px 8px; border-radius:99px;
+    background:rgba(139,92,246,.14); color:#c4b5fd; border:1px solid rgba(139,92,246,.35); }
+  .sec { margin-top:14px; padding-top:14px; border-top:1px solid var(--border); }
+
+  /* inbox */
   .toolbar { display:flex; gap:8px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
   .toolbar .addr3 { flex:1; min-width:170px; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text);
     background:rgba(0,0,0,.35); border:1px solid var(--border); border-radius:12px; padding:11px 13px;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:9px; }
   .toolbar .addr3 .lamp { width:6px; height:6px; border-radius:50%; background:var(--green); flex:none;
     box-shadow:0 0 8px var(--green); }
-  .toolbar input { flex:0 0 210px; padding-left:36px; }
   .toolbar .input-wrap { flex:0 0 210px; }
   @media (max-width:700px) { .toolbar .input-wrap { flex:1 1 100%; } }
 
@@ -161,38 +173,72 @@
   .chip:hover { color:var(--text); border-color:var(--border-strong); }
   .chip.on { background:linear-gradient(135deg,rgba(99,102,241,.3),rgba(168,85,247,.2));
     border-color:rgba(139,92,246,.6); color:#fff; box-shadow:0 0 14px rgba(139,92,246,.25); }
+  .chip .cnt { opacity:.7; font-size:10px; margin-left:4px; }
   .gsearch { display:flex; gap:6px; align-items:center; font-size:11.5px; color:var(--faint); margin-left:auto;
     cursor:pointer; user-select:none; }
   .gsearch input { accent-color:var(--accent2); }
   .stats { font-size:11.5px; color:var(--faint); margin-bottom:12px; font-variant-numeric:tabular-nums; }
 
+  /* analytics */
+  #analytics { display:none; margin-bottom:14px; padding:16px; border:1px solid rgba(139,92,246,.3);
+    border-radius:14px; background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(236,72,153,.04));
+    animation:rise .3s both; }
+  #analytics.show { display:block; }
+  #analytics h3 { font-size:12px; letter-spacing:1.4px; text-transform:uppercase; color:var(--faint); margin-bottom:12px; }
+  .an-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:700px) { .an-grid { grid-template-columns:1fr; } }
+  .an-card { background:rgba(0,0,0,.25); border:1px solid var(--border); border-radius:12px; padding:14px; }
+  .an-card h4 { font-size:11px; color:var(--muted); font-weight:600; margin-bottom:10px; text-transform:uppercase; letter-spacing:.8px; }
+  .sender-row { display:flex; align-items:center; gap:8px; font-size:11.5px; margin-bottom:7px; }
+  .sender-row .nm { flex:none; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); }
+  .sender-row .bar { flex:1; height:7px; border-radius:99px; background:rgba(255,255,255,.07); overflow:hidden; }
+  .sender-row .bar i { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,var(--accent),var(--accent2)); }
+  .sender-row .ct { font-size:10.5px; color:var(--faint); flex:none; font-variant-numeric:tabular-nums; }
+  .hist { display:flex; align-items:flex-end; gap:3px; height:56px; }
+  .hist .hcol { flex:1; border-radius:3px 3px 0 0; background:linear-gradient(180deg,var(--accent2),rgba(168,85,247,.25));
+    min-height:2px; transition:height .4s; }
+  .hist .hcol:hover { filter:brightness(1.4); }
+  .hist-lbl { display:flex; justify-content:space-between; font-size:9.5px; color:var(--faint); margin-top:5px; }
+  .kpis { display:flex; gap:10px; margin-bottom:12px; }
+  .kpi { flex:1; text-align:center; background:rgba(0,0,0,.25); border:1px solid var(--border); border-radius:12px; padding:10px 6px; }
+  .kpi b { display:block; font-size:19px; font-weight:800; font-variant-numeric:tabular-nums; }
+  .kpi span { font-size:9.5px; color:var(--faint); text-transform:uppercase; letter-spacing:.8px; }
+
   /* messages */
-  .msg { padding:14px 15px; border:1px solid var(--border); border-radius:14px; margin-bottom:9px;
+  .msg { padding:13px 15px; border:1px solid var(--border); border-radius:14px; margin-bottom:9px;
     cursor:pointer; transition:border-color .16s, background .16s, transform .16s, box-shadow .16s;
     display:flex; gap:12px; align-items:flex-start; animation:rise .3s both; background:rgba(255,255,255,.02); }
   .msg:hover { border-color:rgba(139,92,246,.5); background:rgba(255,255,255,.045);
     transform:translateY(-1px); box-shadow:0 6px 22px rgba(0,0,0,.35); }
+  .msg.hidden-by-rule { display:none; }
   .msg .m-avatar { width:38px; height:38px; border-radius:12px; display:grid; place-items:center; flex:none;
     font-weight:700; color:#fff; font-size:15px; text-shadow:0 1px 2px rgba(0,0,0,.3);
     box-shadow:inset 0 0 0 1px rgba(255,255,255,.12); }
   .msg .m-body { flex:1; min-width:0; }
-  .msg h3 { font-size:13.5px; font-weight:600; margin-bottom:2px; display:flex; gap:8px; align-items:center; }
+  .msg h3 { font-size:13.5px; font-weight:600; margin-bottom:2px; display:flex; gap:7px; align-items:center; flex-wrap:wrap; }
   .msg .unread-dot { width:7px; height:7px; border-radius:50%; background:var(--accent2); flex:none;
     box-shadow:0 0 8px var(--accent2); animation:pulse 1.6s infinite; }
   .msg .star { flex:none; font-size:14px; cursor:pointer; opacity:.3; transition:all .15s; }
   .msg .star:hover { opacity:.8; transform:scale(1.2); }
   .msg .star.on { opacity:1; color:var(--amber); text-shadow:0 0 10px rgba(251,191,36,.5); }
   .msg .from { font-size:12px; color:var(--muted); }
-  .msg .meta { font-size:10.5px; color:var(--faint); margin-top:4px; display:flex; gap:12px; }
+  .msg .meta { font-size:10.5px; color:var(--faint); margin-top:4px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
   .msg .intro { font-size:11.5px; color:var(--faint); margin-top:3px; overflow:hidden;
     text-overflow:ellipsis; white-space:nowrap; }
   .new-tag { font-size:9px; font-weight:700; letter-spacing:.6px; color:var(--accent2);
     border:1px solid rgba(168,85,247,.4); padding:1px 6px; border-radius:99px; flex:none; }
+  .tagdot { width:8px; height:8px; border-radius:50%; flex:none; box-shadow:0 0 6px currentColor; }
+  .otp-chip { font-size:10px; font-weight:700; letter-spacing:.5px; padding:2px 8px; border-radius:99px;
+    background:rgba(251,191,36,.13); color:var(--amber); border:1px solid rgba(251,191,36,.35);
+    display:inline-flex; align-items:center; gap:4px; cursor:pointer; font-variant-numeric:tabular-nums;
+    transition:transform .12s; }
+  .otp-chip:hover { transform:scale(1.06); }
+  .rule-chip { font-size:9px; padding:1px 7px; border-radius:99px; background:rgba(139,92,246,.16);
+    color:#c4b5fd; border:1px solid rgba(139,92,246,.35); }
 
   .empty { color:var(--faint); text-align:center; padding:52px 16px; font-size:13px; line-height:1.8; }
   .empty .big { font-size:38px; display:block; margin-bottom:10px; filter:grayscale(.2); }
 
-  /* skeleton */
   .skel { border:1px solid var(--border); border-radius:14px; padding:14px 15px; margin-bottom:9px;
     display:flex; gap:12px; align-items:center; }
   .skel .s-av { width:38px; height:38px; border-radius:12px; background:rgba(255,255,255,.07); flex:none;
@@ -201,7 +247,6 @@
     animation:shimmer 1.4s infinite; }
   @keyframes shimmer { 0%,100% { opacity:.55; } 50% { opacity:1; } }
 
-  /* message view */
   #view { display:none; }
   #back { background:none; border:none; color:#a5b4fc; cursor:pointer; font-size:13px; padding:0; margin-bottom:16px;
     display:inline-flex; align-items:center; gap:6px; transition:gap .15s; font-family:inherit; }
@@ -210,14 +255,21 @@
     background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(255,255,255,.02)); }
   #view-head h2 { font-size:17px; font-weight:700; margin-bottom:7px; line-height:1.35; }
   #view-head .meta { font-size:12.5px; color:var(--muted); margin-bottom:4px; }
-  #view-head .acts { display:flex; gap:8px; margin-top:12px; }
+  #view-head .acts { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; align-items:center; }
+  #view-head .otp-row { display:flex; gap:7px; margin-top:10px; flex-wrap:wrap; }
+  .tag-pal { display:flex; gap:7px; align-items:center; margin-top:10px; }
+  .tag-pal .tdot { width:20px; height:20px; border-radius:50%; cursor:pointer; border:2px solid transparent;
+    transition:transform .12s, border-color .12s; }
+  .tag-pal .tdot:hover { transform:scale(1.2); }
+  .tag-pal .tdot.on { border-color:#fff; box-shadow:0 0 8px rgba(255,255,255,.5); }
+  .tag-pal .tdot.off { background:rgba(255,255,255,.08); border-color:var(--border-strong); }
+  .tag-pal span { font-size:10.5px; color:var(--faint); margin-right:2px; }
   #content { background:rgba(0,0,0,.28); border:1px solid var(--border); border-radius:14px; padding:22px;
     line-height:1.7; font-size:14px; word-wrap:break-word; overflow-wrap:anywhere; animation:rise .3s both; }
   #content img { max-width:100%; height:auto; border-radius:10px; }
   #content a { color:#a5b4fc; }
   #content pre { white-space:pre-wrap; font-family:'JetBrains Mono',monospace; font-size:12.5px; }
 
-  /* toast */
   #toast { position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(90px);
     background:rgba(20,24,36,.92); border:1px solid var(--border-strong); padding:12px 20px; border-radius:14px;
     font-size:13.5px; opacity:0; transition:all .28s cubic-bezier(.2,.7,.3,1.3); z-index:80;
@@ -227,7 +279,6 @@
     border-top-color:#fff; border-radius:50%; animation:spins .7s linear infinite; }
   @keyframes spins { to { transform:rotate(360deg); } }
 
-  /* modal */
   .overlay { position:fixed; inset:0; background:rgba(3,5,10,.72); display:none; align-items:center;
     justify-content:center; z-index:90; backdrop-filter:blur(6px); }
   .overlay.show { display:flex; animation:fadeIn .2s both; }
@@ -248,11 +299,11 @@
 <div class="wrap">
   <header>
     <div class="logo"><span class="mark">⚡</span><span>TempMail&nbsp;Pro</span></div>
-    <div class="status"><span class="dot"></span> Terhubung · auto-refresh 20 detik</div>
+    <div class="status"><span class="dot"></span> Terhubung · auto-refresh <span id="intLbl">20</span> detik</div>
   </header>
 
   <div class="grid">
-    <!-- KIRI: GENERATOR -->
+    <!-- KIRI -->
     <div>
       <div class="panel">
         <h2>🧪 Generator Alamat</h2>
@@ -284,12 +335,59 @@
           <label><input type="checkbox" id="setSound" checked> Bunyi</label>
           <label><input type="checkbox" id="setNotif"> Notifikasi</label>
         </div>
-        <p class="hint">Shortcut: <span class="kbd">G</span> generate · <span class="kbd">R</span> refresh · <span class="kbd">/</span> cari · <span class="kbd">Esc</span> kembali.<br>Email &amp; inbox terhapus otomatis ±1 jam. Data tersimpan di browser.</p>
+        <p class="hint">Shortcut: <span class="kbd">G</span> generate · <span class="kbd">R</span> refresh · <span class="kbd">/</span> cari · <span class="kbd">A</span> analitik · <span class="kbd">Esc</span> kembali.<br>Email &amp; inbox terhapus otomatis ±1 jam. Data tersimpan di browser.</p>
       </div>
 
       <div class="panel" style="margin-top:18px">
         <h2>📒 Alamat Aktif <span class="hint" style="float:right;margin:0">🗑 = hapus dari server</span></h2>
         <div id="history"><p class="hint">Belum ada alamat.</p></div>
+      </div>
+
+      <div class="panel" style="margin-top:18px">
+        <h2>🛡 Aturan Otomatis</h2>
+        <p class="hint" style="margin-top:0">Aturan dijalankan otomatis pada email yang masuk.</p>
+        <div class="rule-row">
+          <select id="rField" style="flex:1">
+            <option value="subject">Subjek</option>
+            <option value="from">Pengirim</option>
+          </select>
+        </div>
+        <div class="rule-row">
+          <input type="text" id="rValue" placeholder="mengandung teks..." style="padding-left:12px">
+        </div>
+        <div class="rule-row">
+          <select id="rAction" style="flex:1">
+            <option value="star">⭐ Bintang</option>
+            <option value="hide">🙈 Sembunyikan</option>
+            <option value="tag0">🏷 Tag merah</option>
+            <option value="tag1">🏷 Tag kuning</option>
+            <option value="tag2">🏷 Tag hijau</option>
+            <option value="tag3">🏷 Tag biru</option>
+            <option value="tag4">🏷 Tag ungu</option>
+            <option value="tag5">🏷 Tag pink</option>
+          </select>
+          <button class="btn small ghost" id="rAdd" style="flex:none">+</button>
+        </div>
+        <div id="rulesList" style="margin-top:10px"><p class="hint">Belum ada aturan.</p></div>
+        <div class="sec">
+          <div class="row" style="gap:14px;align-items:center;flex-wrap:wrap">
+            <label style="margin:0">Refresh
+              <select id="interval" style="margin-left:6px">
+                <option value="10">10 dtk</option>
+                <option value="20" selected>20 dtk</option>
+                <option value="30">30 dtk</option>
+                <option value="60">60 dtk</option>
+              </select>
+            </label>
+            <label style="margin:0;display:flex;align-items:center;gap:6px"><input type="checkbox" id="setPause"> Jeda auto-refresh</label>
+          </div>
+          <div class="row" style="margin-top:12px">
+            <button class="btn small ghost" id="backup" style="flex:1">💾 Backup</button>
+            <button class="btn small ghost" id="restore" style="flex:1">📥 Restore</button>
+            <input type="file" id="restoreFile" accept=".json" style="display:none">
+          </div>
+          <p class="hint">Backup menyimpan alamat, bintang, tag, aturan &amp; pengaturan.</p>
+        </div>
       </div>
     </div>
 
@@ -304,13 +402,24 @@
             <input type="text" id="search" placeholder="cari subjek / pengirim...">
           </div>
           <button class="btn icon ghost" id="refresh" title="Muat ulang (R)">🔄</button>
+          <button class="btn icon ghost" id="analyticsBtn" title="Analitik (A)">📊</button>
           <button class="btn icon ghost" id="export" title="Export inbox (JSON)">⬇️</button>
         </div>
         <div class="filters">
           <span class="chip on" data-f="all">Semua</span>
           <span class="chip" data-f="unread">Belum dibaca</span>
           <span class="chip" data-f="starred">⭐ Berbintang</span>
+          <span class="chip" data-f="otp">🔑 OTP <span class="cnt" data-cnt="otp"></span></span>
+          <span class="chip" data-f="tagged">🏷 Bertag <span class="cnt" data-cnt="tagged"></span></span>
           <label class="gsearch"><input type="checkbox" id="global"> cari semua alamat</label>
+        </div>
+        <div id="analytics">
+          <h3>📊 Analitik Inbox</h3>
+          <div class="kpis" id="anKpis"></div>
+          <div class="an-grid">
+            <div class="an-card"><h4>Top Pengirim</h4><div id="anSenders"></div></div>
+            <div class="an-card"><h4>Aktivitas 24 Jam</h4><div id="anHist"></div><div class="hist-lbl"><span>-24j</span><span>-12j</span><span>sekarang</span></div></div>
+          </div>
         </div>
         <div class="stats" id="stats"></div>
         <div id="inbox"><div class="empty"><span class="big">📭</span>Generate alamat dulu untuk mulai.<br>Email yang masuk akan muncul di sini otomatis.</div></div>
@@ -338,10 +447,12 @@
 const $ = id => document.getElementById(id);
 const GM = 'https://api.guerrillamail.com/ajax.php';
 const LIFETIME = 3600 * 1000;
+const TAG_COLORS = ['#f87171','#fbbf24','#34d399','#60a5fa','#a78bfa','#f472b6'];
+const TAG_NAMES = ['merah','kuning','hijau','biru','ungu','pink'];
 let addresses = [], active = null, msgs = [], timer = null, cdt = null;
-let filter = 'all', prevCount = {};
-let settings = { auto:false, sound:true, notif:false };
-let markers = {};
+let filter = 'all', prevCount = {}, scanQueue = [], scanning = false;
+let settings = { auto:false, sound:true, notif:false, interval:20, paused:false };
+let markers = {}, rules = [];
 
 // ---------- utils ----------
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -392,17 +503,100 @@ function updateTitle() {
   document.title = (unread ? `(${unread}) ` : '') + 'TempMail Pro';
 }
 
-// ---------- settings & markers ----------
+// ---------- settings & markers & rules ----------
 function saveSettings() { localStorage.setItem('tm_settings', JSON.stringify(settings)); }
 function loadSettings() {
-  try { settings = { auto:false, sound:true, notif:false, ...JSON.parse(localStorage.getItem('tm_settings')) }; } catch {}
+  try { settings = { auto:false, sound:true, notif:false, interval:20, paused:false, ...JSON.parse(localStorage.getItem('tm_settings')) }; } catch {}
   $('setAuto').checked = settings.auto; $('setSound').checked = settings.sound; $('setNotif').checked = settings.notif;
+  $('setPause').checked = settings.paused; $('interval').value = settings.interval;
+  $('intLbl').textContent = settings.interval;
 }
 function saveMarkers() { localStorage.setItem('tm_markers', JSON.stringify(markers)); }
 function loadMarkers() { try { markers = JSON.parse(localStorage.getItem('tm_markers')) || {}; } catch { markers = {}; } }
+function saveRules() { localStorage.setItem('tm_rules', JSON.stringify(rules)); }
+function loadRules() { try { rules = JSON.parse(localStorage.getItem('tm_rules')) || []; } catch { rules = []; } renderRules(); }
 const mk = id => { const m = markers[active.address] || (markers[active.address] = {}); return m[id] || (m[id] = { seen:false, starred:false }); };
-const isSeen = (addr, id) => (markers[addr] || {})[id]?.seen;
-const isStarred = (addr, id) => (markers[addr] || {})[id]?.starred;
+const getM = (addr, id) => (markers[addr] || {})[id] || {};
+const isSeen = (addr, id) => getM(addr, id).seen;
+const isStarred = (addr, id) => getM(addr, id).starred;
+
+// ---------- OTP detection ----------
+function detectOTP(s) {
+  if (!s) return [];
+  const t = String(s).replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/&#\d+;/g,' ');
+  const found = new Set();
+  const reCtx = /\b(?:kode|otp|verif|code|one-?time|pin|token|passcode)\b[^\d\n]{0,40}?([A-Za-z0-9]{4,8})/gi;
+  let m;
+  while ((m = reCtx.exec(t))) {
+    const c = m[1].replace(/[^A-Za-z0-9]/g,'');
+    if (c.length >= 4 && c.length <= 8 && !/^(code|otp|pin|token|verif|kode|masuk|login)/i.test(c)) found.add(c.toUpperCase());
+  }
+  const re6 = /(?<!\d)(\d{6})(?!\d)/g;
+  while ((m = re6.exec(t))) { if (m[1] !== '000000') found.add(m[1]); }
+  return [...found].slice(0, 3);
+}
+// background scan: ambil isi email baru & deteksi OTP (maks 4 per siklus)
+async function scanNew() {
+  if (scanning || !active) return;
+  scanning = true;
+  try {
+    const todo = msgs.filter(m => !getM(active.address, m.id).scanned).slice(0, 4);
+    for (const m of todo) {
+      try {
+        const r = await gm({ f:'fetch_email', sid_token: active.sid, email_id: m.id });
+        if (!r || r === false) continue;
+        const codes = detectOTP((r.mail_body || '') + ' ' + (r.mail_body_text || ''));
+        const mm = getM(active.address, m.id);
+        mm.codes = codes; mm.scanned = true;
+        saveMarkers();
+      } catch {}
+      await new Promise(r => setTimeout(r, 250));
+    }
+    if (todo.length) { renderInbox(); updateCounts(); }
+  } finally { scanning = false; }
+}
+
+// ---------- rules ----------
+function applyRulesTo(m, addr) {
+  const eff = { star: isStarred(addr, m.id), hide: false, tag: getM(addr, m.id).tag, matched: [] };
+  for (const r of rules) {
+    if (!r.enabled) continue;
+    const hay = String(m[r.field] || '').toLowerCase();
+    if (!hay.includes(String(r.value || '').toLowerCase())) continue;
+    eff.matched.push(r);
+    if (r.action === 'star') eff.star = true;
+    else if (r.action === 'hide') eff.hide = true;
+    else if (r.action.startsWith('tag')) eff.tag = +r.action.slice(3);
+  }
+  return eff;
+}
+function renderRules() {
+  const el = $('rulesList');
+  if (!rules.length) { el.innerHTML = '<p class="hint">Belum ada aturan.</p>'; return; }
+  el.innerHTML = rules.map((r, i) => {
+    const act = r.action === 'star' ? '⭐ bintang' : r.action === 'hide' ? '🙈 sembunyikan' : `🏷 tag ${TAG_NAMES[+r.action.slice(3)] || ''}`;
+    return `<div class="rule-item" data-i="${i}">
+      <span class="txt"><b>${r.field === 'subject' ? 'Subjek' : 'Pengirim'}</b> mengandung "${esc(r.value)}" → <span class="r-action">${act}</span></span>
+      <button class="onoff ${r.enabled ? 'on' : ''}" data-tog="${i}">${r.enabled ? 'ON' : 'OFF'}</button>
+      <button class="x" data-delr="${i}" style="opacity:1">×</button>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('[data-tog]').forEach(b => b.onclick = () => {
+    rules[b.dataset.tog].enabled = !rules[b.dataset.tog].enabled;
+    saveRules(); renderRules(); renderInbox();
+  });
+  el.querySelectorAll('[data-delr]').forEach(b => b.onclick = () => {
+    rules.splice(+b.dataset.delr, 1); saveRules(); renderRules(); renderInbox();
+  });
+}
+$('rAdd').onclick = () => {
+  const value = $('rValue').value.trim();
+  if (!value) return toast('Isi teks aturan dulu');
+  rules.push({ field: $('rField').value, value, action: $('rAction').value, enabled: true });
+  saveRules(); renderRules(); $('rValue').value = '';
+  toast('⚙️ Aturan ditambahkan'); renderInbox();
+};
+$('rValue').addEventListener('keydown', e => { if (e.key === 'Enter') $('rAdd').click(); });
 
 // ---------- generator ----------
 const ADJ = ['silent','cyber','lunar','neon','cosmic','swift','golden','velvet','mystic','turbo','ghost','solar','royal','crimson','frosty','quantum'];
@@ -527,12 +721,57 @@ $('qrClose').onclick = () => $('qrOverlay').classList.remove('show');
 $('qrOverlay').onclick = e => { if (e.target === $('qrOverlay')) $('qrOverlay').classList.remove('show'); };
 
 ['setAuto','setSound','setNotif'].forEach(id => $(id).onchange = () => {
-  settings = { auto:$('setAuto').checked, sound:$('setSound').checked, notif:$('setNotif').checked };
+  settings = { auto:$('setAuto').checked, sound:$('setSound').checked, notif:$('setNotif').checked,
+    interval: settings.interval, paused: settings.paused };
   saveSettings();
   if (id === 'setNotif' && $('setNotif').checked && 'Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission();
   }
 });
+$('interval').onchange = () => {
+  settings.interval = +$('interval').value; saveSettings();
+  $('intLbl').textContent = settings.interval;
+  restartTimer(); toast('⏱ Interval refresh: ' + settings.interval + ' detik');
+};
+$('setPause').onchange = () => {
+  settings.paused = $('setPause').checked; saveSettings();
+  if (settings.paused) { stopTimer(); toast('⏸ Auto-refresh dijeda'); }
+  else { if (active) loadMessages(true); restartTimer(); toast('▶ Auto-refresh dilanjutkan'); }
+};
+function restartTimer() {
+  if (timer) { clearInterval(timer); timer = null; }
+  if (!settings.paused && active) timer = setInterval(loadMessages, settings.interval * 1000);
+}
+
+// ---------- backup / restore ----------
+$('backup').onclick = () => {
+  const data = { app:'tempmail-pro', v:1, ts: Date.now(), settings, rules, addresses, markers };
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type:'application/json' }));
+  a.download = `tempmail-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('💾 Backup diunduh');
+};
+$('restore').onclick = () => $('restoreFile').click();
+$('restoreFile').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    try {
+      const d = JSON.parse(rd.result);
+      if (d.app !== 'tempmail-pro') throw new Error('bukan file backup TempMail Pro');
+      if (Array.isArray(d.addresses)) { addresses = d.addresses; localStorage.setItem('tm_addresses', JSON.stringify(addresses)); }
+      if (d.settings) { settings = { ...settings, ...d.settings }; localStorage.setItem('tm_settings', JSON.stringify(settings)); }
+      if (d.rules) { rules = d.rules; saveRules(); renderRules(); }
+      if (d.markers) { markers = d.markers; saveMarkers(); }
+      loadSettings(); renderHistory();
+      if (addresses.length) setActive(addresses[0]);
+      toast('📥 Restore berhasil');
+    } catch(err) { toast('❌ Restore gagal: ' + err.message); }
+  };
+  rd.readAsText(f);
+  e.target.value = '';
+};
 
 // ---------- inbox ----------
 function stopTimer() { if (timer) { clearInterval(timer); timer = null; } }
@@ -546,7 +785,7 @@ async function fetchList(a) {
   }));
 }
 async function loadMessages(manual) {
-  if (!active) return;
+  if (!active || settings.paused) return;
   const a = active;
   if (manual && !msgs.length) $('inbox').innerHTML = Array(3).fill('<div class="skel"><div class="s-av"></div><div style="flex:1"><div class="s-line" style="width:55%"></div><div class="s-line" style="width:80%"></div><div class="s-line" style="width:35%"></div></div></div>').join('');
   try {
@@ -562,7 +801,8 @@ async function loadMessages(manual) {
     renderInbox();
     updateTitle();
     if (manual) toast('🔄 Inbox dimuat ulang');
-    if (!timer) timer = setInterval(loadMessages, 20000);
+    scanNew();
+    if (!timer) restartTimer();
   } catch(e) {
     $('inbox').innerHTML = `<div class="empty"><span class="big">⚠️</span>Gagal muat: ${esc(e.message)}</div>`;
   }
@@ -579,38 +819,63 @@ async function globalSearch() {
   results.sort((x, y) => (y.date || '').localeCompare(x.date || ''));
   return results;
 }
+function updateCounts() {
+  document.querySelectorAll('[data-cnt]').forEach(el => {
+    const k = el.dataset.cnt;
+    el.textContent = k === 'otp'
+      ? msgs.filter(m => (getM(active.address, m.id).codes || []).length).length
+      : msgs.filter(m => getM(active.address, m.id).tag !== undefined).length;
+  });
+}
 function renderInbox() {
   const q = $('search').value.trim().toLowerCase();
   const list = msgs.filter(m => {
+    const mm = getM(active.address, m.id);
     if (q && !(m.subject + ' ' + m.from).toLowerCase().includes(q)) return false;
-    if (filter === 'unread' && isSeen(active.address, m.id)) return false;
+    if (filter === 'unread' && mm.seen) return false;
     if (filter === 'starred' && !isStarred(active.address, m.id)) return false;
+    if (filter === 'otp' && !(mm.codes || []).length) return false;
+    if (filter === 'tagged' && mm.tag === undefined) return false;
     return true;
   });
   const unread = msgs.filter(m => !isSeen(active.address, m.id)).length;
   $('stats').textContent = `${msgs.length} pesan · ${unread} belum dibaca${filter !== 'all' ? ` · filter: ${filter}` : ''}`;
+  updateCounts();
   const inbox = $('inbox');
   if (!list.length) { inbox.innerHTML = '<div class="empty"><span class="big">' + (q ? '🔍' : '📭') + '</span>' + (q ? 'Tidak ada hasil untuk "' + esc(q) + '"' : 'Inbox kosong — email baru akan muncul otomatis.') + '</div>'; return; }
   inbox.innerHTML = list.map((m, i) => {
-    const seen = isSeen(active.address, m.id), starred = isStarred(active.address, m.id);
-    return `<div class="msg ${seen ? '' : 'unread'}" data-id="${esc(m.id)}" style="animation-delay:${Math.min(i,8)*0.03}s">
+    const mm = getM(active.address, m.id);
+    const eff = applyRulesTo(m, active.address);
+    if (eff.hide) return '';
+    const seen = mm.seen, starred = eff.star;
+    const codes = mm.codes || [];
+    return `<div class="msg ${seen ? '' : 'unread'} ${eff.hide ? 'hidden-by-rule' : ''}" data-id="${esc(m.id)}" style="animation-delay:${Math.min(i,8)*0.03}s">
        <span class="m-avatar" style="background:${grad(m.from)}">${init(m.from)}</span>
        <div class="m-body">
-         <h3>${seen ? '' : '<span class="unread-dot"></span>'}${esc(m.subject || '(tanpa subjek)')}${seen ? '' : '<span class="new-tag">BARU</span>'}</h3>
+         <h3>${eff.tag !== undefined ? `<span class="tagdot" style="background:${TAG_COLORS[eff.tag]};color:${TAG_COLORS[eff.tag]}"></span>` : ''}
+           ${seen ? '' : '<span class="unread-dot"></span>'}${esc(m.subject || '(tanpa subjek)')}${seen ? '' : '<span class="new-tag">BARU</span>'}
+           ${eff.matched.length ? `<span class="rule-chip">⚙ ${eff.matched.length}</span>` : ''}
+         </h3>
          <div class="from">${esc(m.from || 'pengirim tak dikenal')}</div>
          ${m.intro ? `<div class="intro">${esc(m.intro)}</div>` : ''}
-         <div class="meta"><span>${relTime(m.date)}</span></div>
+         <div class="meta"><span>${relTime(m.date)}</span>
+           ${codes.map(c => `<span class="otp-chip" data-copy="${esc(c)}">🔑 ${esc(c)}</span>`).join('')}
+         </div>
        </div>
        <span class="star ${starred ? 'on' : ''}" data-star="${esc(m.id)}" title="Bintang">★</span>
      </div>`;
   }).join('');
   inbox.querySelectorAll('.msg').forEach(el => el.onclick = e => {
-    if (e.target.dataset.star) return;
+    if (e.target.dataset.star || e.target.dataset.copy) return;
     openMsg(el.dataset.id);
   });
   inbox.querySelectorAll('.star').forEach(s => s.onclick = e => { e.stopPropagation();
     const m = mk(s.dataset.star); m.starred = !m.starred; saveMarkers(); renderInbox();
   });
+  inbox.querySelectorAll('.otp-chip').forEach(c => c.onclick = e => { e.stopPropagation();
+    navigator.clipboard.writeText(c.dataset.copy).then(() => toast('🔑 Kode disalin: <b>' + c.dataset.copy + '</b>')).catch(() => {});
+  });
+  renderAnalytics();
 }
 async function openMsg(id) {
   const a = active;
@@ -624,21 +889,39 @@ async function openMsg(id) {
     const when = gmDate(r.mail_date)
       ? new Date(gmDate(r.mail_date)).toLocaleString('id-ID')
       : (r.mail_date ? r.mail_date : 'waktu tidak diketahui');
-    const starred = isStarred(a.address, id);
+    const mm = mk(id);
+    const codes = detectOTP(html + ' ' + text);
+    if (codes.length) { mm.codes = codes; saveMarkers(); }
+    const tag = mm.tag;
     $('view-head').innerHTML =
       `<h2>${esc(r.mail_subject || '(tanpa subjek)')}</h2>
        <div class="meta">Dari: ${esc(r.mail_from || '')} · ${esc(when)}</div>
+       <div class="otp-row">${codes.length ? codes.map(c => `<span class="otp-chip" data-copy="${esc(c)}">🔑 ${esc(c)}</span>`).join('') : ''}</div>
+       <div class="tag-pal"><span>TAG:</span>
+         ${TAG_COLORS.map((c, i) => `<span class="tdot ${tag === i ? 'on' : ''}" data-tag="${i}" style="background:${c}"></span>`).join('')}
+         <span class="tdot off ${tag === undefined ? 'on' : ''}" data-tag="-1" title="Hapus tag"></span>
+       </div>
        <div class="acts">
-         <button class="btn small ghost" id="vStar">${starred ? '⭐ Batal bintang' : '☆ Bintang'}</button>
+         <button class="btn small ghost" id="vStar">${mm.starred ? '⭐ Batal bintang' : '☆ Bintang'}</button>
          <button class="btn small ghost" id="vEml">⬇️ Unduh .eml</button>
        </div>`;
     $('content').innerHTML = body;
     $('listView').style.display = 'none'; $('view').style.display = 'block';
-    const m = mk(id); if (!m.seen) { m.seen = true; saveMarkers(); }
+    if (!mm.seen) { mm.seen = true; saveMarkers(); }
     updateTitle();
-    $('vStar').onclick = () => { const mm = mk(id); mm.starred = !mm.starred; saveMarkers();
+    $('vStar').onclick = () => { mm.starred = !mm.starred; saveMarkers();
       $('vStar').textContent = mm.starred ? '⭐ Batal bintang' : '☆ Bintang'; };
     $('vEml').onclick = () => downloadEML(r, id);
+    $('view-head').querySelectorAll('.tdot').forEach(d => d.onclick = () => {
+      const t = +d.dataset.tag;
+      if (t === -1) delete mm.tag; else mm.tag = t;
+      saveMarkers();
+      $('view-head').querySelectorAll('.tdot').forEach(x => x.classList.remove('on'));
+      d.classList.add('on');
+      toast('🏷 Tag disimpan');
+    });
+    $('view-head').querySelectorAll('.otp-chip').forEach(c => c.onclick = () =>
+      navigator.clipboard.writeText(c.dataset.copy).then(() => toast('🔑 Kode disalin: <b>' + c.dataset.copy + '</b>')).catch(() => {}));
   } catch(e) { toast('❌ ' + e.message); }
 }
 function downloadEML(r, id) {
@@ -670,7 +953,7 @@ $('search').oninput = () => {
          <span class="m-avatar" style="background:${grad(m.from)}">${init(m.from)}</span>
          <div class="m-body">
            <h3>${esc(m.subject || '(tanpa subjek)')}</h3>
-           <div class="from">${esc(m.from)} <span class="badge" style="margin-left:4px">${esc(m.addr)}</span></div>
+           <div class="from">${esc(m.from)} <span class="rule-chip">${esc(m.addr)}</span></div>
            <div class="meta"><span>${relTime(m.date)}</span></div>
          </div>
        </div>`).join('');
@@ -696,10 +979,46 @@ document.querySelectorAll('.chip').forEach(c => c.onclick = () => {
   c.classList.add('on'); filter = c.dataset.f; renderInbox();
 });
 
+// ---------- analytics ----------
+function renderAnalytics() {
+  if (!$('analytics').classList.contains('show') || !msgs.length) return;
+  const unread = msgs.filter(m => !isSeen(active.address, m.id)).length;
+  const codes = msgs.filter(m => (getM(active.address, m.id).codes || []).length).length;
+  $('anKpis').innerHTML = `
+    <div class="kpi"><b>${msgs.length}</b><span>Pesan</span></div>
+    <div class="kpi"><b>${unread}</b><span>Belum dibaca</span></div>
+    <div class="kpi"><b>${codes}</b><span>🔑 OTP</span></div>
+    <div class="kpi"><b>${addresses.length}</b><span>Alamat</span></div>`;
+  const byFrom = {};
+  msgs.forEach(m => { const k = m.from || '(tanpa)'; byFrom[k] = (byFrom[k] || 0) + 1; });
+  const top = Object.entries(byFrom).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const max = top.length ? top[0][1] : 1;
+  $('anSenders').innerHTML = top.length
+    ? top.map(([nm, c]) => `<div class="sender-row"><span class="nm" title="${esc(nm)}">${esc(nm)}</span><span class="bar"><i style="width:${c/max*100}%"></i></span><span class="ct">${c}</span></div>`).join('')
+    : '<p class="hint">Belum ada data.</p>';
+  const slots = Array(24).fill(0);
+  const now = Date.now();
+  msgs.forEach(m => {
+    const t = m.date ? new Date(m.date).getTime() : NaN;
+    if (!isNaN(t)) {
+      const h = Math.floor((now - t) / 3600000);
+      if (h >= 0 && h < 24) slots[23 - h]++;
+    }
+  });
+  const hmax = Math.max(1, ...slots);
+  $('anHist').innerHTML = slots.map(c =>
+    `<span class="hcol" style="height:${Math.max(3, c/hmax*100)}%" title="${c} email"></span>`).join('');
+}
+$('analyticsBtn').onclick = () => {
+  const el = $('analytics');
+  el.classList.toggle('show');
+  if (el.classList.contains('show')) renderAnalytics();
+};
+
 // ---------- keyboard ----------
 document.addEventListener('keydown', e => {
   const tag = (e.target.tagName || '').toLowerCase();
-  const typing = tag === 'input' || tag === 'textarea' || e.target.isContentEditable;
+  const typing = tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable;
   if (e.key === 'Escape') {
     if ($('qrOverlay').classList.contains('show')) $('qrOverlay').classList.remove('show');
     else if ($('view').style.display === 'block') $('back').click();
@@ -708,10 +1027,16 @@ document.addEventListener('keydown', e => {
   if (typing) return;
   if (e.key === 'g' || e.key === 'G') $('gen').click();
   if (e.key === 'r' || e.key === 'R') $('refresh').click();
+  if (e.key === 'a' || e.key === 'A') $('analyticsBtn').click();
   if (e.key === '/') { e.preventDefault(); $('search').focus(); }
 });
 
-loadSettings(); loadMarkers(); load();
+// ---------- PWA ----------
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+loadSettings(); loadMarkers(); loadRules(); load();
 </script>
 </body>
 </html>
