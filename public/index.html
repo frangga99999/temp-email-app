@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Temp Email</title>
+<style>
+  * { margin:0; box-sizing:border-box; font-family: -apple-system, Segoe UI, Roboto, sans-serif; }
+  body { background:#f4f6fb; color:#1a1a2e; min-height:100vh; display:flex; }
+  #left { width:340px; padding:28px; border-right:1px solid #e3e7f0; }
+  h1 { font-size:20px; margin-bottom:4px; }
+  .sub { color:#6b7280; font-size:13px; margin-bottom:24px; }
+  .box { background:#fff; border:1px solid #e3e7f0; border-radius:10px; padding:16px; }
+  .addr { font-size:14px; word-break:break-all; font-family:ui-monospace, monospace; }
+  .btn { margin-top:10px; padding:10px; border:none; border-radius:8px; background:#3b5bfd; color:#fff; width:100%; font-size:14px; cursor:pointer; }
+  .btn.ghost { background:#eef1f8; color:#3b5bfd; }
+  #refresh { margin-top:14px; }
+  .hint { font-size:11px; color:#9aa0b5; margin-top:10px; }
+  #right { flex:1; padding:28px; }
+  .list h2 { font-size:16px; margin-bottom:10px; }
+  .msg { background:#fff; border:1px solid #e3e7f0; border-radius:10px; padding:14px; margin-bottom:10px; cursor:pointer; }
+  .msg h3 { font-size:14px; }
+  .msg .from { font-size:13px; color:#555; margin-top:3px; }
+  .msg .meta { font-size:11px; color:#9aa0b5; margin-top:3px; }
+  #view { display:none; }
+  #back { background:none; border:none; color:#3b5bfd; cursor:pointer; font-size:inherit; padding:0; margin-bottom:14px; }
+  #content { background:#fff; border:1px solid #e3e7f0; border-radius:10px; padding:20px; line-height:1.6; }
+  .empty { color:#9aa0b5; text-align:center; padding:40px 0; font-size:14px; }
+</style>
+</head>
+<body>
+  <aside id="left">
+    <h1>📧 Temp Email</h1>
+    <p class="sub">Alamat email sekali pakai</p>
+    <div class="box">
+      <div id="addr" class="addr">Memuat...</div>
+      <button class="btn" id="copy">Salin</button>
+      <button class="btn ghost" id="new">Ubah alamat</button>
+    </div>
+    <button class="btn" id="refresh">🔄 Muat ulang inbox</button>
+    <p class="hint">Inbox otomatis refresh tiap 30 detik.</p>
+  </aside>
+  <main id="right">
+    <div class="list">
+      <h2>Inbox</h2>
+      <div id="inbox"><div class="empty">Memuat inbox...</div></div>
+    </div>
+    <div id="view">
+      <button id="back">← Kembali</button>
+      <div id="content"></div>
+    </div>
+  </main>
+  <script>
+    let token = null, addr = null, box = null;
+
+    async function gen() {
+      try {
+        const d = await (await fetch('/api/domain')).json();
+        box = d.domain;
+        const local = 'user' + Math.random().toString(36).slice(2, 8);
+        addr = local + '@' + box;
+        const r = await fetch('/api/account', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ address: addr }) });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error);
+        token = j.token;
+        document.getElementById('addr').textContent = addr;
+        loadMessages();
+      } catch(e) { document.getElementById('addr').textContent = 'Gagal: ' + e.message; }
+    }
+
+    async function loadMessages() {
+      if (!token) return;
+      try {
+        const r = await fetch('/api/messages?token=' + encodeURIComponent(token));
+        if (!r.ok) { if(r.status===401) return gen(); }
+        const list = await r.json();
+        const inbox = document.getElementById('inbox');
+        if (!list.length) { inbox.innerHTML = '<div class="empty">Belum ada email. Inbox kosong.</div>'; return; }
+        inbox.innerHTML = list.map(m => `
+          <div class="msg" data-id="${m.id}">
+            <h3>${esc(m.subject || '(tanpa subjek)')}</h3>
+            <div class="from">Dari: ${esc(m.from.address)}</div>
+            <div class="meta">${new Date(m.createdAt).toLocaleString('id-ID')} · ${m.seen ? 'terbaca' : 'baru'}</div>
+          </div>`).join('');
+        inbox.querySelectorAll('.msg').forEach(el => el.onclick = () => openMsg(el.dataset.id));
+      } catch(e) { inbox.innerHTML = '<div class="empty">Gagal muat: ' + e.message + '</div>'; }
+    }
+
+    async function openMsg(id) {
+      const r = await fetch('/api/message?token=' + encodeURIComponent(token) + '&id=' + encodeURIComponent(id));
+      const m = await r.json();
+      document.getElementById('content').innerHTML =
+        `<h1 style="font-size:18px">${esc(m.subject || '')}</h1>
+         <p style="color:#555;font-size:13px">Dari: ${esc(m.from.address)} · ${new Date(m.createdAt).toLocaleString('id-ID')}</p>
+         <hr style="margin:12px 0;border:none;border-top:1px solid #ddd">
+         ${m.html ? m.html : m.text ? '<pre style="white-space:pre-wrap">'+esc(m.text)+'</pre>' : '(email kosong / tidak ada teks)'}`;
+      document.querySelector('.list').style.display = 'none';
+      document.getElementById('view').style.display = 'block';
+    }
+    document.getElementById('back').onclick = () => {
+      document.querySelector('.list').style.display = 'block';
+      document.getElementById('view').style.display = 'none';
+    };
+
+    function esc(s){ return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+    document.getElementById('copy').onclick = async () => { await navigator.clipboard.writeText(addr); document.getElementById('copy').textContent='✓ Tersalin'; setTimeout(()=>document.getElementById('copy').textContent='Salin',1200); };
+    document.getElementById('new').onclick = gen;
+    document.getElementById('refresh').onclick = loadMessages;
+    setInterval(loadMessages, 30000);
+    gen();
+  </script>
+</body>
+</html>

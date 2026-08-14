@@ -1,0 +1,6 @@
+# versi full-stack (VPS) — tidak dipakai GitHub Pages
+api/
+dev-server.js
+node_modules/
+package.json
+package-lock.json

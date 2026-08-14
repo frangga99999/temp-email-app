@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TempMail Pro — Generator Email Sekali Pakai</title>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
+<style>
+  :root {
+    --bg:#0a0d14; --panel:rgba(255,255,255,.045); --border:rgba(255,255,255,.09);
+    --text:#e8eaf2; --muted:#8b91a7; --accent:#6366f1; --accent2:#a855f7; --accent3:#ec4899;
+    --green:#34d399; --red:#f87171;
+  }
+  * { margin:0; box-sizing:border-box; font-family:-apple-system,'Segoe UI',Roboto,sans-serif; }
+  body { background:var(--bg); color:var(--text); min-height:100vh;
+    background-image:radial-gradient(600px 300px at 15% -10%, rgba(99,102,241,.22), transparent 60%),
+                     radial-gradient(700px 350px at 90% 0%, rgba(168,85,247,.16), transparent 60%);
+  }
+  .wrap { max-width:1200px; margin:0 auto; padding:28px 20px; }
+  header { display:flex; align-items:center; justify-content:space-between; margin-bottom:26px; flex-wrap:wrap; gap:10px; }
+  .logo { font-size:22px; font-weight:800; letter-spacing:-.3px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent3));
+    -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .status { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--muted); }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); animation:pulse 2s infinite; }
+  @keyframes pulse { 50% { opacity:.4; } }
+  .grid { display:grid; grid-template-columns:380px 1fr; gap:22px; }
+  @media (max-width:900px) { .grid { grid-template-columns:1fr; } }
+  .panel { background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:20px;
+    backdrop-filter:blur(10px); }
+  .panel h2 { font-size:14px; text-transform:uppercase; letter-spacing:1.2px; color:var(--muted); margin-bottom:14px; }
+  label { font-size:12px; color:var(--muted); display:block; margin-bottom:6px; }
+  .row { display:flex; gap:8px; }
+  input { width:100%; background:rgba(0,0,0,.35); border:1px solid var(--border); border-radius:10px;
+    padding:11px 12px; color:var(--text); font-size:14px; outline:none; transition:border .15s; }
+  input:focus { border-color:var(--accent); }
+  .btn { border:none; border-radius:10px; padding:11px 16px; font-size:14px; font-weight:600; cursor:pointer;
+    color:#fff; transition:transform .1s, filter .15s; white-space:nowrap; }
+  .btn:hover { filter:brightness(1.12); } .btn:active { transform:scale(.97); }
+  .btn.primary { background:linear-gradient(90deg,var(--accent),var(--accent2)); }
+  .btn.ghost { background:rgba(255,255,255,.08); color:var(--text); }
+  .btn.icon { padding:11px 12px; }
+  .btn:disabled { opacity:.5; cursor:not-allowed; }
+  .mt { margin-top:12px; }
+  .addr-box { margin-top:16px; padding:14px; border:1px dashed var(--border); border-radius:12px;
+    display:flex; align-items:center; justify-content:space-between; gap:10px; background:rgba(99,102,241,.06); }
+  .addr { font-family:ui-monospace,SFMono-Regular,monospace; font-size:13.5px; word-break:break-all; }
+  .badge { font-size:10px; font-weight:700; padding:3px 8px; border-radius:99px; letter-spacing:.5px;
+    background:rgba(236,72,153,.16); color:#f9a8d4; }
+  .history-item { display:flex; align-items:center; gap:8px; padding:9px 10px; border-radius:10px;
+    cursor:pointer; border:1px solid transparent; font-size:12.5px; margin-bottom:6px; }
+  .history-item:hover { background:rgba(255,255,255,.05); }
+  .history-item.active { border-color:var(--accent); background:rgba(99,102,241,.12); }
+  .history-item .addr2 { font-family:ui-monospace,monospace; flex:1; word-break:break-all; }
+  .x { background:none; border:none; color:var(--muted); cursor:pointer; font-size:15px; padding:2px 6px; }
+  .x:hover { color:var(--red); }
+  .hint { font-size:11px; color:var(--muted); margin-top:10px; line-height:1.5; }
+  .toolbar { display:flex; gap:8px; align-items:center; margin-bottom:14px; }
+  .toolbar .addr3 { flex:1; font-family:ui-monospace,monospace; font-size:12.5px; color:var(--muted);
+    background:rgba(0,0,0,.3); border:1px solid var(--border); border-radius:10px; padding:10px 12px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #search { flex:0 0 200px; padding:10px 12px; font-size:13px; }
+  @media (max-width:700px) { #search { flex:1 1 100%; } .toolbar { flex-wrap:wrap; } }
+  .msg { padding:13px 14px; border:1px solid var(--border); border-radius:12px; margin-bottom:9px;
+    cursor:pointer; transition:border-color .15s, background .15s; position:relative; }
+  .msg:hover { border-color:var(--accent); background:rgba(255,255,255,.03); }
+  .msg h3 { font-size:14px; margin-bottom:3px; display:flex; gap:8px; align-items:center; }
+  .msg .unread-dot { width:7px; height:7px; border-radius:50%; background:var(--accent2); flex:none; }
+  .msg .from { font-size:12.5px; color:var(--muted); }
+  .msg .meta { font-size:11px; color:var(--muted); margin-top:4px; display:flex; gap:12px; }
+  .msg .intro { font-size:12px; color:var(--muted); margin-top:2px; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap; }
+  .empty { color:var(--muted); text-align:center; padding:46px 0; font-size:13.5px; }
+  #view { display:none; }
+  #back { background:none; border:none; color:#a5b4fc; cursor:pointer; font-size:13px; padding:0; margin-bottom:14px; }
+  #view-head { margin-bottom:14px; }
+  #view-head h2 { font-size:17px; margin-bottom:6px; }
+  #view-head .meta { font-size:12.5px; color:var(--muted); margin-bottom:4px; }
+  #content { background:rgba(0,0,0,.25); border:1px solid var(--border); border-radius:12px; padding:20px;
+    line-height:1.65; font-size:14px; word-wrap:break-word; overflow-wrap:anywhere; }
+  #content img { max-width:100%; height:auto; border-radius:8px; }
+  #content a { color:#a5b4fc; }
+  #content pre { white-space:pre-wrap; font-family:ui-monospace,monospace; }
+  #toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(80px);
+    background:#1c2130; border:1px solid var(--border); padding:11px 18px; border-radius:12px; font-size:13.5px;
+    opacity:0; transition:all .25s; z-index:50; box-shadow:0 8px 30px rgba(0,0,0,.5); }
+  #toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+  .spin { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,.3);
+    border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; vertical-align:-2px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">⚡ TempMail Pro</div>
+    <div class="status"><span class="dot"></span> Terhubung · auto-refresh 20 detik</div>
+  </header>
+
+  <div class="grid">
+    <!-- KIRI: GENERATOR -->
+    <div>
+      <div class="panel">
+        <h2>🧪 Generator Alamat</h2>
+        <label for="uname">Username (kosongkan untuk acak)</label>
+        <div class="row">
+          <input id="uname" placeholder="contoh: neonfalcon42" spellcheck="false" autocomplete="off">
+          <button class="btn ghost icon" id="dice" title="Acak username">🎲</button>
+        </div>
+        <button class="btn primary mt" id="gen" style="width:100%">⚡ Generate Alamat Email</button>
+        <div class="addr-box" id="addrBox" style="display:none">
+          <span class="addr" id="addr"></span>
+          <button class="btn ghost icon" id="copy" title="Salin">📋</button>
+        </div>
+        <p class="hint">Powered by guerrillamail — alamat acak/custom, email &amp; inbox terhapus otomatis ±1 jam. Alamat tersimpan di browser (localStorage).</p>
+      </div>
+
+      <div class="panel mt" style="margin-top:16px">
+        <h2>📒 Alamat Aktif</h2>
+        <div id="history"><p class="hint">Belum ada alamat.</p></div>
+      </div>
+    </div>
+
+    <!-- KANAN: INBOX -->
+    <div class="panel">
+      <div id="listView">
+        <h2>📥 Inbox</h2>
+        <div class="toolbar">
+          <span class="addr3" id="curAddr">—</span>
+          <input id="search" placeholder="🔍 cari subjek / pengirim...">
+          <button class="btn icon ghost" id="refresh" title="Muat ulang">🔄</button>
+        </div>
+        <div id="inbox"><div class="empty">Generate alamat dulu untuk mulai.</div></div>
+      </div>
+      <div id="view">
+        <button id="back">← Kembali ke inbox</button>
+        <div id="view-head"></div>
+        <div id="content"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const GM = 'https://api.guerrillamail.com/ajax.php';
+let addresses = [], active = null, msgs = [], timer = null;
+
+// ---------- utils ----------
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(t) { const e = $('toast'); e.textContent = t; e.classList.add('show'); setTimeout(() => e.classList.remove('show'), 1800); }
+function relTime(d) {
+  if (!d) return '';
+  const s = (Date.now() - new Date(d).getTime()) / 1000;
+  if (s < 60) return 'baru saja';
+  if (s < 3600) return Math.floor(s/60) + ' mnt lalu';
+  if (s < 86400) return Math.floor(s/3600) + ' jam lalu';
+  return new Date(d).toLocaleString('id-ID', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+}
+async function gm(params) {
+  const q = Object.entries(params).map(([k,v]) => `${k}=${encodeURIComponent(v)}`).join('&');
+  const r = await fetch(`${GM}?${q}`);
+  if (!r.ok) throw new Error('API guerrillamail: ' + r.status);
+  return r.json();
+}
+function gmDate(s) {
+  if (!s || String(s).startsWith('0000')) return '';
+  try { return new Date(String(s).replace(' ','T')).toISOString(); } catch { return ''; }
+}
+
+// ---------- generator ----------
+const ADJ = ['silent','cyber','lunar','neon','cosmic','swift','golden','velvet','mystic','turbo','ghost','solar','royal','crimson','frosty','quantum'];
+const NOUN = ['wolf','falcon','tiger','comet','nebula','pixel','shadow','storm','blaze','vortex','raven','lotus','ember','drift','koi','phoenix'];
+function randName() { return ADJ[Math.random()*ADJ.length|0] + NOUN[Math.random()*NOUN.length|0] + (10+Math.random()*890|0); }
+
+$('dice').onclick = () => { $('uname').value = randName(); };
+$('gen').onclick = async () => {
+  const local = $('uname').value.trim().toLowerCase().replace(/[^a-z0-9._-]/g,'');
+  $('gen').disabled = true; $('gen').innerHTML = '<span class="spin"></span> Membuat...';
+  try {
+    const r = local
+      ? await gm({ f:'set_email_user', email_user: local })
+      : await gm({ f:'get_email_address' });
+    if (!r.email_addr) throw new Error('Gagal membuat alamat, coba lagi');
+    const a = { provider:'guerrilla', address: r.email_addr, sid: r.sid_token, createdAt: Date.now() };
+    addresses = addresses.filter(x => x.address !== a.address);
+    addresses.unshift(a);
+    save(); renderHistory(); setActive(a); toast('✅ Alamat dibuat: ' + a.address);
+  } catch(e) { toast('❌ ' + e.message); }
+  $('gen').disabled = false; $('gen').textContent = '⚡ Generate Alamat Email';
+};
+
+// ---------- address history ----------
+function save() { localStorage.setItem('tm_addresses', JSON.stringify(addresses)); }
+function load() {
+  try { addresses = JSON.parse(localStorage.getItem('tm_addresses')) || []; } catch { addresses = []; }
+  if (addresses.length) { renderHistory(); setActive(addresses[0]); }
+}
+function renderHistory() {
+  const h = $('history');
+  if (!addresses.length) { h.innerHTML = '<p class="hint">Belum ada alamat.</p>'; return; }
+  h.innerHTML = addresses.map(a =>
+    `<div class="history-item ${active && active.address === a.address ? 'active' : ''}" data-addr="${esc(a.address)}">
+       <span class="badge">GM</span>
+       <span class="addr2">${esc(a.address)}</span>
+       <button class="x" title="Hapus dari daftar">×</button>
+     </div>`).join('');
+  h.querySelectorAll('.history-item').forEach(el => {
+    el.onclick = e => { if (e.target.classList.contains('x')) return; setActive(addresses.find(a => a.address === el.dataset.addr)); };
+    el.querySelector('.x').onclick = e => { e.stopPropagation();
+      addresses = addresses.filter(a => a.address !== el.dataset.addr); save(); renderHistory();
+      if (active && active.address === el.dataset.addr) {
+        active = null; $('curAddr').textContent = '—'; $('inbox').innerHTML = '<div class="empty">Generate alamat dulu untuk mulai.</div>';
+        stopTimer();
+      }
+    };
+  });
+}
+function setActive(a) {
+  active = a; renderHistory();
+  $('curAddr').textContent = a.address;
+  $('addr').textContent = a.address; $('addrBox').style.display = 'flex';
+  loadMessages(true);
+}
+$('copy').onclick = async () => {
+  try { await navigator.clipboard.writeText(active.address); toast('📋 Alamat disalin!'); }
+  catch { toast('Gagal menyalin'); }
+};
+
+// ---------- inbox ----------
+function stopTimer() { if (timer) { clearInterval(timer); timer = null; } }
+async function loadMessages(manual) {
+  if (!active) return;
+  const a = active;
+  try {
+    const r = await gm({ f:'get_email_list', sid_token: a.sid });
+    const list = (r && Array.isArray(r.list)) ? r.list : [];
+    msgs = list.map(m => ({
+      id: String(m.mail_id), from: m.mail_from || '', subject: m.mail_subject || '',
+      date: gmDate(m.mail_date), seen: false, intro: m.mail_excerpt || '',
+    }));
+    if (active !== a) return; // switched meanwhile
+    renderInbox();
+    if (manual) toast('🔄 Inbox dimuat ulang');
+    if (!timer) timer = setInterval(loadMessages, 20000);
+  } catch(e) {
+    $('inbox').innerHTML = `<div class="empty">Gagal muat: ${esc(e.message)}</div>`;
+  }
+}
+function renderInbox() {
+  const q = $('search').value.trim().toLowerCase();
+  const list = msgs.filter(m => !q || (m.subject + ' ' + m.from).toLowerCase().includes(q));
+  const inbox = $('inbox');
+  if (!list.length) { inbox.innerHTML = '<div class="empty">' + (q ? 'Tidak ada hasil untuk "' + esc(q) + '"' : '📭 Inbox kosong — email baru akan muncul otomatis.') + '</div>'; return; }
+  inbox.innerHTML = list.map(m =>
+    `<div class="msg" data-id="${esc(m.id)}">
+       <h3><span class="unread-dot"></span>${esc(m.subject || '(tanpa subjek)')}</h3>
+       <div class="from">${esc(m.from || 'pengirim tak dikenal')}</div>
+       ${m.intro ? `<div class="intro">${esc(m.intro)}</div>` : ''}
+       <div class="meta"><span>${relTime(m.date)}</span></div>
+     </div>`).join('');
+  inbox.querySelectorAll('.msg').forEach(el => el.onclick = () => openMsg(el.dataset.id));
+}
+async function openMsg(id) {
+  const a = active;
+  try {
+    const r = await gm({ f:'fetch_email', sid_token: a.sid, email_id: id });
+    if (active !== a) return;
+    if (!r || r === false || r.mail_id === undefined) throw new Error('Email tidak ditemukan (mungkin sudah terhapus)');
+    const html = r.mail_body || '';
+    const text = r.mail_body_text || r.mail_excerpt || '';
+    const body = html ? DOMPurify.sanitize(html) : text ? `<pre>${esc(text)}</pre>` : '<p class="empty">(email kosong)</p>';
+    $('view-head').innerHTML =
+      `<h2>${esc(r.mail_subject || '(tanpa subjek)')}</h2>
+       <div class="meta">Dari: ${esc(r.mail_from || '')} · ${new Date(gmDate(r.mail_date)).toLocaleString('id-ID')}</div>`;
+    $('content').innerHTML = body;
+    $('listView').style.display = 'none'; $('view').style.display = 'block';
+  } catch(e) { toast('❌ ' + e.message); }
+}
+$('back').onclick = () => { $('view').style.display = 'none'; $('listView').style.display = 'block'; renderInbox(); };
+$('refresh').onclick = () => loadMessages(true);
+$('search').oninput = renderInbox;
+
+load();
+</script>
+</body>
+</html>
