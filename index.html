@@ -271,9 +271,12 @@ async function openMsg(id) {
     const html = r.mail_body || '';
     const text = r.mail_body_text || r.mail_excerpt || '';
     const body = html ? DOMPurify.sanitize(html) : text ? `<pre>${esc(text)}</pre>` : '<p class="empty">(email kosong)</p>';
+    const when = gmDate(r.mail_date)
+      ? new Date(gmDate(r.mail_date)).toLocaleString('id-ID')
+      : (r.mail_date ? r.mail_date : 'waktu tidak diketahui');
     $('view-head').innerHTML =
       `<h2>${esc(r.mail_subject || '(tanpa subjek)')}</h2>
-       <div class="meta">Dari: ${esc(r.mail_from || '')} · ${new Date(gmDate(r.mail_date)).toLocaleString('id-ID')}</div>`;
+       <div class="meta">Dari: ${esc(r.mail_from || '')} · ${esc(when)}</div>`;
     $('content').innerHTML = body;
     $('listView').style.display = 'none'; $('view').style.display = 'block';
   } catch(e) { toast('❌ ' + e.message); }
