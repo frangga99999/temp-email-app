@@ -453,7 +453,9 @@
         <div class="sec">
           <label for="proxyUrl">URL Proxy VPS (mail.tm) — https://xxx.trycloudflare.com</label>
           <input type="text" id="proxyUrl" placeholder="https://xxx.trycloudflare.com" spellcheck="false" autocomplete="off" style="padding-left:12px">
-          <p class="hint">Proxy berjalan di VPS port 20129, diteruskan via Cloudflare Tunnel. Tanpa ini, provider mail.tm tidak bisa dipakai.</p>
+          <label for="proxyToken" style="margin-top:10px">Token Proxy</label>
+          <input type="text" id="proxyToken" placeholder="token rahasia" spellcheck="false" autocomplete="off" style="padding-left:12px">
+          <p class="hint">Proxy berjalan di VPS port 20129 via Cloudflare Tunnel. Token melindungi proxy dari pemakaian orang lain. Tanpa keduanya, provider mail.tm tidak bisa dipakai.</p>
         </div>
         <div class="sec">
           <div class="row">
@@ -527,6 +529,7 @@ const TAG_COLORS = ['#f87171','#fbbf24','#34d399','#60a5fa','#a78bfa','#f472b6']
 const TAG_NAMES = ['merah','kuning','hijau','biru','ungu','pink'];
 const MT_PASSWORD = 'TempMail!2026';
 let mtProxy = localStorage.getItem('tm_proxy') || 'https://simultaneously-mentioned-expiration-side.trycloudflare.com';
+let mtToken = localStorage.getItem('tm_proxy_token') || '41fdbbb88fc9b6234d3e37e4589ef68ea399';
 const PROVIDER_META = {
   guerrilla: { name:'Guerrilla Mail', badge:'GM', cls:'prov-gm' },
   mailtm:    { name:'mail.tm',        badge:'MT', cls:'prov-mt' },
@@ -561,7 +564,10 @@ async function gm(params) {
 // ---------- mail.tm via proxy VPS ----------
 async function mt(path, opts = {}) {
   if (!mtProxy) throw new Error('URL proxy VPS belum diatur (tab Setelan)');
-  const r = await fetch(mtProxy + '/mailtm' + path, opts);
+  const r = await fetch(mtProxy + '/mailtm' + path, {
+    ...opts,
+    headers: { ...(opts.headers || {}), 'X-Proxy-Token': mtToken },
+  });
   const txt = await r.text();
   let data; try { data = txt ? JSON.parse(txt) : {}; } catch { data = {}; }
   if (!r.ok) {
@@ -668,11 +674,17 @@ function loadSettings() {
   $('setPause').checked = settings.paused; $('interval').value = settings.interval;
   $('intLbl').textContent = settings.interval;
   $('proxyUrl').value = mtProxy;
+  $('proxyToken').value = mtToken;
 }
 $('proxyUrl').onchange = () => {
   mtProxy = $('proxyUrl').value.trim().replace(/\/+$/, '');
   localStorage.setItem('tm_proxy', mtProxy);
   toast(mtProxy ? '🔗 URL proxy disimpan' : 'URL proxy dikosongkan');
+};
+$('proxyToken').onchange = () => {
+  mtToken = $('proxyToken').value.trim();
+  localStorage.setItem('tm_proxy_token', mtToken);
+  toast(mtToken ? '🔑 Token proxy disimpan' : 'Token dikosongkan');
 };
 function saveMarkers() { localStorage.setItem('tm_markers', JSON.stringify(markers)); }
 function loadMarkers() { try { markers = JSON.parse(localStorage.getItem('tm_markers')) || {}; } catch { markers = {}; } }
