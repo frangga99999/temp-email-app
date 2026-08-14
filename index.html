@@ -180,13 +180,15 @@
 
   /* ---------- RIGHT: inbox + reading pane ---------- */
   #rightPanel { display:grid; grid-template-columns:1fr; gap:0; }
-  #rightPanel.split { grid-template-columns:minmax(310px,42%) 1fr; gap:16px; }
+  #rightPanel.split { grid-template-columns:minmax(320px,46%) 1fr; gap:16px; }
   #rightPanel.split #listView { overflow-y:auto; max-height:calc(100vh - 320px); padding-right:4px; }
   #view { display:none; min-width:0; }
   #rightPanel.split #view { display:block; animation:rise .3s both; }
+  #back { display:none; }
   @media (max-width:1200px) {
     #rightPanel.split { grid-template-columns:1fr; }
     #rightPanel.split #listView { display:none; }
+    #back { display:inline-flex; }
   }
   #listView { min-width:0; }
 
