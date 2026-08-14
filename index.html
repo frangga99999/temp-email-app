@@ -234,7 +234,7 @@ async function loadMessages(manual) {
   if (!active) return;
   const a = active;
   try {
-    const r = await gm({ f:'get_email_list', sid_token: a.sid });
+    const r = await gm({ f:'get_email_list', sid_token: a.sid, offset: 0, limit: 50 });
     const list = (r && Array.isArray(r.list)) ? r.list : [];
     msgs = list.map(m => ({
       id: String(m.mail_id), from: m.mail_from || '', subject: m.mail_subject || '',
