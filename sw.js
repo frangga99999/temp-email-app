@@ -1,5 +1,5 @@
 // TempMail Pro service worker — cache-first untuk shell + CDN
-const CACHE = 'tempmail-v1';
+const CACHE = 'tempmail-v2';
 const CDN = [
   'https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap',
