@@ -78,6 +78,11 @@
   .hero-gen { display:flex; flex-direction:column; gap:10px; }
   .hero-gen label { font-size:12px; color:var(--muted); font-weight:500; margin:0; }
   .hero-gen label span { opacity:.6; }
+  .prov-row { display:flex; gap:6px; align-items:center; }
+  .prov-row select { flex:1; }
+  .prov-chip { font-size:9.5px; padding:2px 9px; border-radius:99px; letter-spacing:.5px; font-weight:700; flex:none; }
+  .prov-gm { background:rgba(236,72,153,.16); color:#f9a8d4; }
+  .prov-mt { background:rgba(99,102,241,.18); color:#a5b4fc; }
 
   .grid { display:grid; grid-template-columns:360px 1fr; gap:20px; align-items:start; margin-top:20px; }
   @media (max-width:980px) { .grid { grid-template-columns:1fr; } }
@@ -368,6 +373,14 @@
         </div>
         <button class="btn ghost icon" id="dice" title="Acak username">🎲</button>
       </div>
+      <div class="prov-row">
+        <label style="margin:0;flex:none">Provider</label>
+        <select id="provider">
+          <option value="guerrilla">Guerrilla Mail</option>
+          <option value="mailtm">mail.tm (via proxy VPS)</option>
+        </select>
+        <span class="prov-chip prov-gm" id="provChip">GM</span>
+      </div>
       <div class="batch">
         <label>Batch</label>
         <input type="range" id="batch" min="1" max="5" value="1">
@@ -438,12 +451,17 @@
           </div>
         </div>
         <div class="sec">
+          <label for="proxyUrl">URL Proxy VPS (mail.tm) — https://xxx.trycloudflare.com</label>
+          <input type="text" id="proxyUrl" placeholder="https://xxx.trycloudflare.com" spellcheck="false" autocomplete="off" style="padding-left:12px">
+          <p class="hint">Proxy berjalan di VPS port 20129, diteruskan via Cloudflare Tunnel. Tanpa ini, provider mail.tm tidak bisa dipakai.</p>
+        </div>
+        <div class="sec">
           <div class="row">
             <button class="btn small ghost" id="backup" style="flex:1">💾 Backup</button>
             <button class="btn small ghost" id="restore" style="flex:1">📥 Restore</button>
             <input type="file" id="restoreFile" accept=".json" style="display:none">
           </div>
-          <p class="hint">Menyimpan alamat, bintang, tag, aturan &amp; pengaturan. Email &amp; inbox terhapus otomatis ±1 jam.</p>
+          <p class="hint">Menyimpan alamat, bintang, tag, aturan &amp; pengaturan. Email &amp; inbox terhapus otomatis ±1 jam (guerrillamail) / beberapa hari (mail.tm).</p>
         </div>
       </div>
     </div>
@@ -507,6 +525,12 @@ const LIFETIME = 3600 * 1000;
 const RING_C = 2 * Math.PI * 20;
 const TAG_COLORS = ['#f87171','#fbbf24','#34d399','#60a5fa','#a78bfa','#f472b6'];
 const TAG_NAMES = ['merah','kuning','hijau','biru','ungu','pink'];
+const MT_PASSWORD = 'TempMail!2026';
+let mtProxy = localStorage.getItem('tm_proxy') || ''; // https://xxx.trycloudflare.com
+const PROVIDER_META = {
+  guerrilla: { name:'Guerrilla Mail', badge:'GM', cls:'prov-gm' },
+  mailtm:    { name:'mail.tm',        badge:'MT', cls:'prov-mt' },
+};
 let addresses = [], active = null, msgs = [], timer = null, cdt = null;
 let filter = 'all', prevCount = {}, scanQueue = [], scanning = false;
 let settings = { auto:false, sound:true, notif:false, interval:20, paused:false };
@@ -533,6 +557,73 @@ async function gm(params) {
   const r = await fetch(`${GM}?${q}`);
   if (!r.ok) throw new Error('API guerrillamail: ' + r.status);
   return r.json();
+}
+// ---------- mail.tm via proxy VPS ----------
+async function mt(path, opts = {}) {
+  if (!mtProxy) throw new Error('URL proxy VPS belum diatur (tab Setelan)');
+  const r = await fetch(mtProxy + '/mailtm' + path, opts);
+  const txt = await r.text();
+  let data; try { data = txt ? JSON.parse(txt) : {}; } catch { data = {}; }
+  if (!r.ok) {
+    const err = new Error(data['hydra:description'] || data.detail || data.error || ('mail.tm ' + r.status));
+    err.status = r.status; throw err;
+  }
+  return data;
+}
+// provider abstraction
+async function provCreate(provider, local) {
+  if (provider === 'guerrilla') {
+    const r = local ? await gm({ f:'set_email_user', email_user: local }) : await gm({ f:'get_email_address' });
+    if (!r.email_addr) throw new Error('Gagal membuat alamat, coba lagi');
+    return { provider, address: r.email_addr, sid: r.sid_token, createdAt: Date.now() };
+  }
+  if (provider === 'mailtm') {
+    const d = await mt('/domains');
+    const domain = (d['hydra:member'] || []).find(x => x.isActive)?.domain;
+    if (!domain) throw new Error('mail.tm tidak punya domain aktif');
+    const address = `${local || randName()}@${domain}`;
+    try { await mt('/accounts', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ address, password: MT_PASSWORD }) }); } catch {}
+    const t = await mt('/token', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ address, password: MT_PASSWORD }) });
+    return { provider, address, token: t.token, createdAt: Date.now() };
+  }
+  throw new Error('Provider tidak dikenal: ' + provider);
+}
+async function provList(a) {
+  if (a.provider === 'guerrilla') {
+    const r = await gm({ f:'get_email_list', sid_token: a.sid, offset: 0, limit: 50 });
+    const list = (r && Array.isArray(r.list)) ? r.list : [];
+    return list.map(m => ({
+      id: String(m.mail_id), from: m.mail_from || '', subject: m.mail_subject || '',
+      date: gmDate(m.mail_date) || (m.mail_date ? new Date().toISOString().slice(0,10) + 'T' + m.mail_date + 'Z' : ''),
+      intro: m.mail_excerpt || '',
+    }));
+  }
+  if (a.provider === 'mailtm') {
+    const r = await mt('/messages?page=1', { headers: { Authorization: `Bearer ${a.token}` } });
+    return (r['hydra:member'] || []).map(m => ({
+      id: String(m.id), from: m.from?.address || '', subject: m.subject || '',
+      date: m.createdAt, intro: m.intro || '',
+    }));
+  }
+  return [];
+}
+async function provDetail(a, id) {
+  if (a.provider === 'guerrilla') {
+    const r = await gm({ f:'fetch_email', sid_token: a.sid, email_id: id });
+    if (!r || r === false || r.mail_id === undefined) throw Object.assign(new Error('Email tidak ditemukan (mungkin sudah terhapus)'), { status: 404 });
+    return { from: r.mail_from || '', subject: r.mail_subject || '', date: gmDate(r.mail_date),
+      html: r.mail_body || '', text: r.mail_body_text || r.mail_excerpt || '' };
+  }
+  if (a.provider === 'mailtm') {
+    const r = await mt(`/messages/${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${a.token}` } });
+    return { from: r.from?.address || '', subject: r.subject || '', date: r.createdAt,
+      html: r.html || '', text: r.text || '' };
+  }
+  throw new Error('Provider tidak dikenal');
+}
+async function provDeleteMailbox(a) {
+  if (a.provider === 'guerrilla') await gm({ f:'deleteMailbox', sid_token: a.sid });
+  // mail.tm: tidak ada endpoint hapus mailbox publik — cukup hapus dari daftar lokal
 }
 function gmDate(s) {
   if (!s || String(s).startsWith('0000')) return '';
@@ -576,7 +667,13 @@ function loadSettings() {
   $('setAuto').checked = settings.auto; $('setSound').checked = settings.sound; $('setNotif').checked = settings.notif;
   $('setPause').checked = settings.paused; $('interval').value = settings.interval;
   $('intLbl').textContent = settings.interval;
+  $('proxyUrl').value = mtProxy;
 }
+$('proxyUrl').onchange = () => {
+  mtProxy = $('proxyUrl').value.trim().replace(/\/+$/, '');
+  localStorage.setItem('tm_proxy', mtProxy);
+  toast(mtProxy ? '🔗 URL proxy disimpan' : 'URL proxy dikosongkan');
+};
 function saveMarkers() { localStorage.setItem('tm_markers', JSON.stringify(markers)); }
 function loadMarkers() { try { markers = JSON.parse(localStorage.getItem('tm_markers')) || {}; } catch { markers = {}; } }
 function saveRules() { localStorage.setItem('tm_rules', JSON.stringify(rules)); }
@@ -608,9 +705,8 @@ async function scanNew() {
     const todo = msgs.filter(m => !getM(active.address, m.id).scanned).slice(0, 4);
     for (const m of todo) {
       try {
-        const r = await gm({ f:'fetch_email', sid_token: active.sid, email_id: m.id });
-        if (!r || r === false) continue;
-        const codes = detectOTP((r.mail_body || '') + ' ' + (r.mail_body_text || ''));
+        const r = await provDetail(active, m.id);
+        const codes = detectOTP((r.html || '') + ' ' + (r.text || ''));
         const mm = getM(active.address, m.id);
         mm.codes = codes; mm.scanned = true;
         saveMarkers();
@@ -670,19 +766,23 @@ function randName() { return ADJ[Math.random()*ADJ.length|0] + NOUN[Math.random(
 
 $('dice').onclick = () => { $('uname').value = randName(); };
 $('batch').oninput = () => { $('batchVal').textContent = $('batch').value + ' alamat'; };
+$('provider').onchange = () => {
+  const p = $('provider').value;
+  const m = PROVIDER_META[p];
+  const chip = $('provChip');
+  chip.textContent = m.badge;
+  chip.className = 'prov-chip ' + m.cls;
+};
 $('gen').onclick = async () => {
   const local = $('uname').value.trim().toLowerCase().replace(/[^a-z0-9._-]/g,'');
   const n = +$('batch').value;
+  const provider = $('provider').value;
   $('gen').disabled = true; $('gen').innerHTML = '<span class="spin"></span>&nbsp;Membuat ' + n + ' alamat...';
   let ok = 0;
   try {
     for (let i = 0; i < n; i++) {
       try {
-        const r = (local && i === 0)
-          ? await gm({ f:'set_email_user', email_user: local })
-          : await gm({ f:'get_email_address' });
-        if (!r.email_addr) throw new Error('gagal');
-        const a = { provider:'guerrilla', address: r.email_addr, sid: r.sid_token, createdAt: Date.now() };
+        const a = await provCreate(provider, local && i === 0 ? local : '');
         addresses = addresses.filter(x => x.address !== a.address);
         addresses.unshift(a);
         ok++;
@@ -714,6 +814,7 @@ function renderHistory() {
     return `<div class="history-item ${active && active.address === a.address ? 'active' : ''} ${expired ? 'expired' : ''}" data-addr="${esc(a.address)}" style="animation-delay:${i*0.04}s">
        <span class="avatar" style="background:${grad(a.address)}">${init(a.address)}</span>
        <span class="addr2">${esc(a.address)}</span>
+       <span class="prov-chip ${PROVIDER_META[a.provider]?.cls || 'prov-gm'}" style="flex:none">${PROVIDER_META[a.provider]?.badge || '?'}</span>
        <span class="ttl-mini" data-ttl="${esc(a.address)}">${expired ? '⏳ habis' : fmtCountdown(left)}</span>
        <button class="x del" data-del="${esc(a.address)}" title="Hapus dari server + daftar">🗑</button>
        <button class="x" data-x="${esc(a.address)}" title="Hapus dari daftar">×</button>
@@ -733,8 +834,8 @@ function renderHistory() {
   h.querySelectorAll('[data-del]').forEach(b => b.onclick = async e => { e.stopPropagation();
     const addr = b.dataset.del;
     const a = addresses.find(x => x.address === addr);
-    if (!a || !confirm(`Hapus ${addr} dari server guerrillamail? Semua email di inbox-nya ikut terhapus.`)) return;
-    try { await gm({ f:'deleteMailbox', sid_token: a.sid }); } catch {}
+    if (!a || !confirm(`Hapus ${addr} dari daftar?${a.provider === 'guerrilla' ? ' Mailbox di server guerrillamail ikut terhapus beserta emailnya.' : ''}`)) return;
+    try { await provDeleteMailbox(a); } catch {}
     addresses = addresses.filter(x => x.address !== addr); save(); renderHistory();
     if (active && active.address === addr) { active = null; $('curAddr').textContent = '—'; $('addr').textContent = '—'; $('ttl').textContent = 'Generate alamat untuk mulai'; $('heroStats').textContent = ''; $('inbox').innerHTML = '<div class="empty"><span class="big">📭</span>Generate alamat dulu untuk mulai.<br>Email yang masuk akan muncul di sini otomatis.</div>'; stopTimer(); closePane(); updateTitle(); }
     toast('🗑 Mailbox dihapus dari server');
@@ -848,13 +949,7 @@ $('restoreFile').onchange = e => {
 // ---------- inbox ----------
 function stopTimer() { if (timer) { clearInterval(timer); timer = null; } }
 async function fetchList(a) {
-  const r = await gm({ f:'get_email_list', sid_token: a.sid, offset: 0, limit: 50 });
-  const list = (r && Array.isArray(r.list)) ? r.list : [];
-  return list.map(m => ({
-    id: String(m.mail_id), from: m.mail_from || '', subject: m.mail_subject || '',
-    date: gmDate(m.mail_date) || (m.mail_date ? new Date().toISOString().slice(0,10) + 'T' + m.mail_date + 'Z' : ''),
-    intro: m.mail_excerpt || '',
-  }));
+  return provList(a);
 }
 async function loadMessages(manual) {
   if (!active || settings.paused) return;
@@ -963,22 +1058,20 @@ function openMsg(id) {
 }
 async function loadDetail(id, a) {
   try {
-    const r = await gm({ f:'fetch_email', sid_token: a.sid, email_id: id });
+    const r = await provDetail(a, id);
     if (active !== a) return;
-    if (!r || r === false || r.mail_id === undefined) throw new Error('Email tidak ditemukan (mungkin sudah terhapus)');
-    const html = r.mail_body || '';
-    const text = r.mail_body_text || r.mail_excerpt || '';
-    const body = html ? DOMPurify.sanitize(html) : text ? `<pre>${esc(text)}</pre>` : '<p class="empty">(email kosong)</p>';
-    const when = gmDate(r.mail_date)
-      ? new Date(gmDate(r.mail_date)).toLocaleString('id-ID')
-      : (r.mail_date ? r.mail_date : 'waktu tidak diketahui');
+    if (!r || r.from === undefined && !r.html && !r.text) throw Object.assign(new Error('Email tidak ditemukan (mungkin sudah terhapus)'), { status: 404 });
+    const body = r.html ? DOMPurify.sanitize(r.html) : r.text ? `<pre>${esc(r.text)}</pre>` : '<p class="empty">(email kosong)</p>';
+    const when = r.date
+      ? new Date(r.date).toLocaleString('id-ID')
+      : 'waktu tidak diketahui';
     const mm = mk(id);
-    const codes = detectOTP(html + ' ' + text);
+    const codes = detectOTP((r.html || '') + ' ' + (r.text || ''));
     if (codes.length) { mm.codes = codes; saveMarkers(); }
     const tag = mm.tag;
     $('view-head').innerHTML =
-      `<h2>${esc(r.mail_subject || '(tanpa subjek)')}</h2>
-       <div class="meta">Dari: ${esc(r.mail_from || '')} · ${esc(when)}</div>
+      `<h2>${esc(r.subject || '(tanpa subjek)')}</h2>
+       <div class="meta">Dari: ${esc(r.from || '')} · ${esc(when)}</div>
        <div class="otp-row">${codes.length ? codes.map(c => `<span class="otp-chip" data-copy="${esc(c)}">🔑 ${esc(c)}</span>`).join('') : ''}</div>
        <div class="tag-pal"><span>TAG:</span>
          ${TAG_COLORS.map((c, i) => `<span class="tdot ${tag === i ? 'on' : ''}" data-tag="${i}" style="background:${c}"></span>`).join('')}
@@ -1008,14 +1101,14 @@ async function loadDetail(id, a) {
 }
 function downloadEML(r, id) {
   const eml = [
-    `From: ${r.mail_from || ''}`,
+    `From: ${r.from || ''}`,
     `To: ${active.address}`,
-    `Subject: ${r.mail_subject || ''}`,
-    `Date: ${new Date().toUTCString()}`,
+    `Subject: ${r.subject || ''}`,
+    `Date: ${new Date(r.date || Date.now()).toUTCString()}`,
     'MIME-Version: 1.0',
     'Content-Type: text/html; charset=UTF-8',
     '',
-    r.mail_body || r.mail_body_text || '',
+    r.html || r.text || '',
   ].join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([eml], { type:'message/rfc822' }));
