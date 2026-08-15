@@ -183,6 +183,32 @@
   .r-action { display:flex; align-items:center; gap:5px; font-size:10.5px; padding:2px 8px; border-radius:99px;
     background:rgba(139,92,246,.14); color:#c4b5fd; border:1px solid rgba(139,92,246,.35); }
 
+  /* ---------- kartu uji (mock card) ---------- */
+  .ccard { aspect-ratio:1.586; border-radius:16px; padding:16px 18px; position:relative; overflow:hidden;
+    display:flex; flex-direction:column; justify-content:space-between; color:#fff;
+    box-shadow:0 12px 32px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.18);
+    font-family:'JetBrains Mono',monospace; user-select:none; }
+  .ccard::before { content:''; position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(120% 90% at 15% -10%, rgba(255,255,255,.22), transparent 55%); }
+  .c-visa { background:linear-gradient(135deg,#1a1f71,#2f3f9e 70%,#3d5ac4); }
+  .c-mc { background:linear-gradient(135deg,#1c1c1c,#3a3a3a 60%,#525252); }
+  .c-amex { background:linear-gradient(135deg,#006fcf,#1f86e0 60%,#3fa0ee); }
+  .c-discover { background:linear-gradient(135deg,#f36f21,#e05a0e 60%,#c94f0a); }
+  .c-jcb { background:linear-gradient(135deg,#0b3a6e,#124a85 60%,#1c5ea8); }
+  .c-chip { width:34px; height:24px; border-radius:5px; background:linear-gradient(135deg,#f7dd9a,#c9a34f);
+    box-shadow:inset 0 1px 2px rgba(255,255,255,.5), 0 1px 3px rgba(0,0,0,.4); }
+  .c-num { font-size:clamp(13px,1.7vw,17px); letter-spacing:2px; font-weight:600; text-shadow:0 1px 2px rgba(0,0,0,.4); }
+  .c-row { display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:10.5px; letter-spacing:1px; text-transform:uppercase; }
+  .c-row .c-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .c-brand { align-self:flex-end; font-weight:800; font-size:13px; letter-spacing:1.5px; text-shadow:0 1px 2px rgba(0,0,0,.35); }
+  .card-item { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px;
+    border:1px solid var(--border); background:rgba(255,255,255,.03); font-size:11.5px; margin-bottom:6px;
+    cursor:pointer; transition:border-color .15s, background .15s; }
+  .card-item:hover { border-color:rgba(139,92,246,.5); background:rgba(255,255,255,.05); }
+  .card-item .cnum { font-family:'JetBrains Mono',monospace; flex:1; color:var(--muted); font-size:11px; }
+  .card-item .cx { opacity:0; }
+  .card-item:hover .cx { opacity:1; }
+
   /* ---------- RIGHT: inbox + reading pane ---------- */
   #rightPanel { display:grid; grid-template-columns:1fr; gap:0; }
   #rightPanel.split { grid-template-columns:minmax(320px,46%) 1fr; gap:16px; }
@@ -395,6 +421,7 @@
     <div class="panel" style="animation-delay:.06s">
       <div class="tabs">
         <button class="tab on" data-tab="addr">📒 Alamat</button>
+        <button class="tab" data-tab="cards">💳 Kartu</button>
         <button class="tab" data-tab="rules">🛡 Aturan</button>
         <button class="tab" data-tab="pref">⚙️ Setelan</button>
       </div>
@@ -402,6 +429,50 @@
       <div class="tabpane on" id="tab-addr">
         <div id="history"><p class="hint">Belum ada alamat.</p></div>
         <p class="hint">🗑 hapus dari server · × hapus dari daftar. Shortcut: <span class="kbd">G</span> generate · <span class="kbd">R</span> refresh · <span class="kbd">/</span> cari · <span class="kbd">A</span> analitik · <span class="kbd">Esc</span> tutup.</p>
+      </div>
+
+      <div class="tabpane" id="tab-cards">
+        <p class="hint" style="margin-top:0;color:var(--amber)">⚠️ Kartu <b>uji/demo</b> — nomor valid Luhn tetapi <b>tidak dapat digunakan</b> untuk transaksi nyata, pembayaran, atau verifikasi akun. Penggunaan untuk penipuan melanggar hukum.</p>
+        <div class="row">
+          <select id="cBrand" style="flex:1">
+            <option value="visa">Visa</option>
+            <option value="mastercard">Mastercard</option>
+            <option value="amex">American Express</option>
+            <option value="discover">Discover</option>
+            <option value="jcb">JCB</option>
+          </select>
+          <button class="btn small ghost" id="cGen" style="flex:none">🎲 Generate</button>
+        </div>
+        <div class="ccard c-visa" id="ccard" style="margin-top:12px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div class="c-chip"></div>
+            <div class="c-brand" id="cBrandLabel">VISA</div>
+          </div>
+          <div class="c-num" id="cNum">•••• •••• •••• ••••</div>
+          <div class="c-row">
+            <span class="c-name" id="cName">NAMA PEMEGANG</span>
+            <span id="cExp">••/••</span>
+            <span id="cCvv">CVV •••</span>
+          </div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn small ghost" id="cCopyNum" style="flex:1">📋 Salin nomor</button>
+          <button class="btn small ghost" id="cCopyAll" style="flex:1">📋 Salin semua</button>
+        </div>
+        <label style="margin-top:12px">Nama pemegang (bisa diedit)</label>
+        <input type="text" id="cNameInput" placeholder="cth: Budi Santoso" spellcheck="false" autocomplete="off" style="padding-left:12px">
+        <div class="sec">
+          <h2 style="margin-bottom:8px">🧾 Riwayat Kartu</h2>
+          <div id="cardsList"><p class="hint">Belum ada kartu.</p></div>
+        </div>
+        <div class="sec">
+          <label for="luhnInput">🔎 Cek nomor kartu (validasi Luhn)</label>
+          <div class="row">
+            <input type="text" id="luhnInput" placeholder="contoh: 4242 4242 4242 4242" spellcheck="false" autocomplete="off" style="padding-left:12px">
+            <button class="btn small ghost" id="luhnBtn" style="flex:none">Cek</button>
+          </div>
+          <p class="hint" id="luhnRes"></p>
+        </div>
       </div>
 
       <div class="tabpane" id="tab-rules">
@@ -770,6 +841,116 @@ $('rAdd').onclick = () => {
   toast('⚙️ Aturan ditambahkan'); renderInbox();
 };
 $('rValue').addEventListener('keydown', e => { if (e.key === 'Enter') $('rAdd').click(); });
+
+// ---------- kartu uji (test card) ----------
+const CARD_PREFIX = {
+  visa:       { len:16, prefix:['4'] },
+  mastercard: { len:16, prefix:['51','52','53','54','55','2221','2222','2223','2224','2225','2720'] },
+  amex:       { len:15, prefix:['34','37'] },
+  discover:   { len:16, prefix:['6011','65','644','645','646','647','648','649'] },
+  jcb:        { len:16, prefix:['3528','3529','353','354','355','356','357','358'] },
+};
+const CARD_LABEL = { visa:'VISA', mastercard:'MASTERCARD', amex:'AMEX', discover:'DISCOVER', jcb:'JCB' };
+const FIRST_N = ['Budi','Sari','Dewi','Rizky','Andi','Putri','Agus','Rina','Fajar','Maya','Kevin','Sinta','Yoga','Lestari','Dimas','Nadia','Raka','Intan'];
+const LAST_N = ['Santoso','Wijaya','Kusuma','Pratama','Saputra','Hidayat','Ramadhan','Utami','Handoko','Nugroho','Setiawan','Larasati','Putra','Anggraini'];
+let cards = [], curCard = null;
+function loadCards() { try { cards = JSON.parse(localStorage.getItem('tm_cards')) || []; } catch { cards = []; } }
+function saveCards() { localStorage.setItem('tm_cards', JSON.stringify(cards.slice(0, 8))); }
+function luhnValid(num) {
+  const d = String(num).replace(/\D/g, '');
+  if (d.length < 13) return false;
+  let sum = 0, alt = false;
+  for (let i = d.length - 1; i >= 0; i--) {
+    let n = +d[i];
+    if (alt) { n *= 2; if (n > 9) n -= 9; }
+    sum += n; alt = !alt;
+  }
+  return sum % 10 === 0;
+}
+function genCardNumber(brand) {
+  const { len, prefix } = CARD_PREFIX[brand];
+  const p = prefix[Math.floor(Math.random() * prefix.length)];
+  let num = p;
+  while (num.length < len - 1) num += Math.floor(Math.random() * 10);
+  let sum = 0, alt = true;
+  for (let i = num.length - 1; i >= 0; i--) {
+    let n = +num[i];
+    if (alt) { n *= 2; if (n > 9) n -= 9; }
+    sum += n; alt = !alt;
+  }
+  return num + ((10 - (sum % 10)) % 10);
+}
+const genExp = () => {
+  const m = String(1 + Math.floor(Math.random() * 12)).padStart(2, '0');
+  const y = String(new Date().getFullYear() + 1 + Math.floor(Math.random() * 4)).slice(-2);
+  return m + '/' + y;
+};
+const genCvv = brand => brand === 'amex' ? String(1000 + Math.floor(Math.random() * 9000)) : String(100 + Math.floor(Math.random() * 900));
+const fmtCardNum = (n, brand) => {
+  const d = String(n);
+  return brand === 'amex' ? d.replace(/(\d{4})(\d{6})(\d{5})/, '$1 $2 $3') : d.replace(/(\d{4})(?=\d)/g, '$1 ');
+};
+const randCardName = () => FIRST_N[Math.random() * FIRST_N.length | 0] + ' ' + LAST_N[Math.random() * LAST_N.length | 0];
+function makeCard(brand) {
+  const number = genCardNumber(brand);
+  return { brand, number, exp: genExp(), cvv: genCvv(brand), name: randCardName(), ts: Date.now() };
+}
+function renderCardVisual() {
+  if (!curCard) return;
+  $('ccard').className = 'ccard c-' + curCard.brand;
+  $('cBrandLabel').textContent = CARD_LABEL[curCard.brand];
+  $('cNum').textContent = fmtCardNum(curCard.number, curCard.brand);
+  $('cName').textContent = (curCard.name || 'NAMA PEMEGANG').toUpperCase();
+  $('cExp').textContent = curCard.exp;
+  $('cCvv').textContent = 'CVV ' + curCard.cvv;
+  $('cNameInput').value = curCard.name || '';
+}
+function renderCards() {
+  const el = $('cardsList');
+  if (!cards.length) { el.innerHTML = '<p class="hint">Belum ada kartu.</p>'; return; }
+  el.innerHTML = cards.map((c, i) => `
+    <div class="card-item" data-i="${i}" title="Klik untuk pakai">
+      <span class="prov-chip ${c.brand === 'amex' ? 'prov-mt' : 'prov-gm'}" style="flex:none">${CARD_LABEL[c.brand]}</span>
+      <span class="cnum">•••• •••• •••• ${String(c.number).slice(-4)} · ${c.exp}</span>
+      <button class="x cx" data-delc="${i}" title="Hapus">×</button>
+    </div>`).join('');
+  el.querySelectorAll('.card-item').forEach(item => item.onclick = e => {
+    if (e.target.dataset.delc) return;
+    curCard = cards[+item.dataset.i]; renderCardVisual();
+    toast('💳 Kartu dimuat');
+  });
+  el.querySelectorAll('[data-delc]').forEach(b => b.onclick = e => { e.stopPropagation();
+    cards.splice(+b.dataset.delc, 1); saveCards(); renderCards();
+  });
+}
+$('cGen').onclick = () => {
+  curCard = makeCard($('cBrand').value);
+  cards.unshift({ ...curCard });
+  saveCards();
+  renderCardVisual(); renderCards();
+  toast('💳 Kartu uji dibuat');
+};
+$('cCopyNum').onclick = () => {
+  if (!curCard) return toast('Generate kartu dulu');
+  navigator.clipboard.writeText(curCard.number).then(() => toast('📋 Nomor disalin'));
+};
+$('cCopyAll').onclick = () => {
+  if (!curCard) return toast('Generate kartu dulu');
+  const txt = `${fmtCardNum(curCard.number, curCard.brand)}\n${curCard.exp}\n${curCard.cvv}\n${curCard.name}`;
+  navigator.clipboard.writeText(txt).then(() => toast('📋 Kartu lengkap disalin'));
+};
+$('cNameInput').oninput = () => {
+  if (curCard) { curCard.name = $('cNameInput').value; renderCardVisual(); }
+};
+$('luhnBtn').onclick = () => {
+  const raw = $('luhnInput').value.trim();
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length < 13) { $('luhnRes').innerHTML = 'Masukkan minimal 13 digit.'; return; }
+  const ok = luhnValid(digits);
+  $('luhnRes').innerHTML = ok
+    ? '<span style="color:var(--green)">✅ Format valid (lolos cek Luhn) — tetap tidak berarti bisa dipakai transaksi.</span>'
+    : '<span style="color:var(--red)">❌ Gagal cek Luhn — nomor tidak valid.</span>';
+};
 
 // ---------- generator ----------
 const ADJ = ['silent','cyber','lunar','neon','cosmic','swift','golden','velvet','mystic','turbo','ghost','solar','royal','crimson','frosty','quantum'];
@@ -1223,7 +1404,8 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
-loadSettings(); loadMarkers(); loadRules(); load();
+loadSettings(); loadMarkers(); loadRules(); loadCards(); load();
+if (cards.length) { curCard = cards[0]; renderCardVisual(); }
 </script>
 </body>
 </html>
