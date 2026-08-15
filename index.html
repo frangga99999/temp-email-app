@@ -209,6 +209,29 @@
   .card-item .cx { opacity:0; }
   .card-item:hover .cx { opacity:1; }
 
+  /* ---------- profil dummy ---------- */
+  .prof-grid { display:grid; gap:7px; margin-top:12px; }
+  .pfield { display:flex; align-items:center; gap:8px; background:rgba(0,0,0,.25);
+    border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-size:12px;
+    transition:border-color .15s; }
+  .pfield:hover { border-color:var(--border-strong); }
+  .pfield .pk { color:var(--faint); font-size:10px; text-transform:uppercase; letter-spacing:.6px;
+    flex:none; width:66px; }
+  .pfield .pv { flex:1; font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--text);
+    word-break:break-all; }
+  .pfield .pc { background:none; border:none; color:var(--faint); cursor:pointer; opacity:0;
+    transition:opacity .15s, color .15s; font-size:13px; padding:2px 5px; border-radius:6px; }
+  .pfield:hover .pc { opacity:1; }
+  .pfield .pc:hover { color:#fff; background:rgba(255,255,255,.08); }
+  .prof-item { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px;
+    border:1px solid var(--border); background:rgba(255,255,255,.03); font-size:11.5px; margin-bottom:6px;
+    cursor:pointer; transition:border-color .15s, background .15s; }
+  .prof-item:hover { border-color:rgba(139,92,246,.5); background:rgba(255,255,255,.05); }
+  .prof-item .pname { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); }
+  .prof-item .pcity { font-size:10px; color:var(--faint); flex:none; }
+  .prof-item .cx { opacity:0; }
+  .prof-item:hover .cx { opacity:1; }
+
   /* ---------- RIGHT: inbox + reading pane ---------- */
   #rightPanel { display:grid; grid-template-columns:1fr; gap:0; }
   #rightPanel.split { grid-template-columns:minmax(320px,46%) 1fr; gap:16px; }
@@ -422,6 +445,7 @@
       <div class="tabs">
         <button class="tab on" data-tab="addr">📒 Alamat</button>
         <button class="tab" data-tab="cards">💳 Kartu</button>
+        <button class="tab" data-tab="prof">👤 Profil</button>
         <button class="tab" data-tab="rules">🛡 Aturan</button>
         <button class="tab" data-tab="pref">⚙️ Setelan</button>
       </div>
@@ -472,6 +496,35 @@
             <button class="btn small ghost" id="luhnBtn" style="flex:none">Cek</button>
           </div>
           <p class="hint" id="luhnRes"></p>
+        </div>
+      </div>
+
+      <div class="tabpane" id="tab-prof">
+        <p class="hint" style="margin-top:0;color:var(--amber)">⚠️ Identitas <b>fiktif</b> untuk testing form &amp; demo. Tidak untuk verifikasi identitas (KYC) atau penipuan. Tanpa NIK/KTP/SIM/NPWP — data pemerintah tidak di-generate.</p>
+        <div class="row">
+          <select id="pGender" style="flex:1">
+            <option value="acak">Acak</option>
+            <option value="pria">Pria</option>
+            <option value="wanita">Wanita</option>
+          </select>
+          <button class="btn small ghost" id="pGen" style="flex:none">🎲 Generate</button>
+        </div>
+        <div class="prof-grid" id="profGrid">
+          <div class="pfield"><span class="pk">Nama</span><span class="pv" id="pName" data-v="">—</span><button class="pc" data-copy="pName" title="Salin">📋</button></div>
+          <div class="pfield"><span class="pk">Tgl lahir</span><span class="pv" id="pDob" data-v="">—</span><button class="pc" data-copy="pDob" title="Salin">📋</button></div>
+          <div class="pfield"><span class="pk">No. HP</span><span class="pv" id="pPhone" data-v="">—</span><button class="pc" data-copy="pPhone" title="Salin">📋</button></div>
+          <div class="pfield"><span class="pk">Alamat</span><span class="pv" id="pStreet" data-v="">—</span><button class="pc" data-copy="pStreet" title="Salin">📋</button></div>
+          <div class="pfield"><span class="pk">Kota</span><span class="pv" id="pCity" data-v="">—</span><button class="pc" data-copy="pCity" title="Salin">📋</button></div>
+          <div class="pfield"><span class="pk">Kode pos</span><span class="pv" id="pZip" data-v="">—</span><button class="pc" data-copy="pZip" title="Salin">📋</button></div>
+          <div class="pfield"><span class="pk">Pekerjaan</span><span class="pv" id="pJob" data-v="">—</span><button class="pc" data-copy="pJob" title="Salin">📋</button></div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn small ghost" id="pCopyAll" style="flex:1">📋 Salin semua</button>
+          <button class="btn small ghost" id="pEmail" style="flex:1">🔗 Buat email sekali pakai</button>
+        </div>
+        <div class="sec">
+          <h2 style="margin-bottom:8px">🗂 Riwayat Profil</h2>
+          <div id="profList"><p class="hint">Belum ada profil.</p></div>
         </div>
       </div>
 
@@ -952,6 +1005,109 @@ $('luhnBtn').onclick = () => {
     : '<span style="color:var(--red)">❌ Gagal cek Luhn — nomor tidak valid.</span>';
 };
 
+// ---------- profil dummy ----------
+const MALE_N = ['Budi','Rizky','Andi','Agus','Fajar','Kevin','Yoga','Dimas','Raka','Hendra','Bayu','Doni','Eko','Fauzi','Gilang','Irfan','Joko','Lukman','Miko','Nanda'];
+const FEM_N = ['Sari','Dewi','Putri','Rina','Maya','Sinta','Lestari','Nadia','Intan','Ayu','Citra','Dian','Fitri','Gita','Hana','Indah','Kartika','Laras','Mega','Nurul'];
+const LAST_ID = ['Santoso','Wijaya','Kusuma','Pratama','Saputra','Hidayat','Ramadhan','Utami','Handoko','Nugroho','Setiawan','Larasati','Putra','Anggraini','Rahayu','Suryani','Wibowo','Gunawan','Halim','Kurniawan'];
+const CITIES = [
+  { c:'Jakarta Pusat', p:'DKI Jakarta', z:'10110' }, { c:'Jakarta Selatan', p:'DKI Jakarta', z:'12110' },
+  { c:'Jakarta Timur', p:'DKI Jakarta', z:'13110' }, { c:'Jakarta Barat', p:'DKI Jakarta', z:'11110' },
+  { c:'Bandung', p:'Jawa Barat', z:'40111' }, { c:'Bekasi', p:'Jawa Barat', z:'17111' },
+  { c:'Depok', p:'Jawa Barat', z:'16411' }, { c:'Bogor', p:'Jawa Barat', z:'16111' },
+  { c:'Tangerang', p:'Banten', z:'15111' }, { c:'Serang', p:'Banten', z:'42111' },
+  { c:'Surabaya', p:'Jawa Timur', z:'60111' }, { c:'Malang', p:'Jawa Timur', z:'65111' },
+  { c:'Semarang', p:'Jawa Tengah', z:'50111' }, { c:'Surakarta', p:'Jawa Tengah', z:'57111' },
+  { c:'Yogyakarta', p:'DI Yogyakarta', z:'55111' }, { c:'Denpasar', p:'Bali', z:'80111' },
+  { c:'Mataram', p:'NTB', z:'83111' }, { c:'Kupang', p:'NTT', z:'85111' },
+  { c:'Medan', p:'Sumatera Utara', z:'20111' }, { c:'Padang', p:'Sumatera Barat', z:'25111' },
+  { c:'Pekanbaru', p:'Riau', z:'28111' }, { c:'Palembang', p:'Sumatera Selatan', z:'30111' },
+  { c:'Bandar Lampung', p:'Lampung', z:'35111' }, { c:'Jambi', p:'Jambi', z:'36111' },
+  { c:'Pontianak', p:'Kalimantan Barat', z:'78111' }, { c:'Banjarmasin', p:'Kalimantan Selatan', z:'70111' },
+  { c:'Samarinda', p:'Kalimantan Timur', z:'75111' }, { c:'Palangka Raya', p:'Kalimantan Tengah', z:'73111' },
+  { c:'Makassar', p:'Sulawesi Selatan', z:'90111' }, { c:'Manado', p:'Sulawesi Utara', z:'95111' },
+  { c:'Palu', p:'Sulawesi Tengah', z:'94111' }, { c:'Kendari', p:'Sulawesi Tenggara', z:'93111' },
+  { c:'Ambon', p:'Maluku', z:'97111' }, { c:'Ternate', p:'Maluku Utara', z:'97711' },
+  { c:'Jayapura', p:'Papua', z:'99111' }, { c:'Sorong', p:'Papua Barat Daya', z:'98411' },
+];
+const STREETS = ['Jl. Merdeka','Jl. Sudirman','Jl. Thamrin','Jl. Ahmad Yani','Jl. Gajah Mada','Jl. Diponegoro','Jl. Pahlawan','Jl. Melati','Jl. Kenanga','Jl. Cempaka','Jl. Anggrek','Jl. Mawar','Jl. Flamboyan','Jl. Kartini','Jl. Imam Bonjol','Jl. Veteran','Jl. Pemuda','Jl. Raya Serpong','Jl. Raya Cilandak','Jl. Raya Kalimalang','Jl. Gatot Subroto','Jl. Rasuna Said','Jl. Asia Afrika','Jl. Teuku Umar','Jl. Cikini Raya'];
+const PHONE_PREFIX = ['0811','0812','0813','0814','0815','0816','0817','0818','0819','0821','0822','0823','0824','0825','0826','0827','0828','0829','0831','0832','0833','0838','0851','0852','0853','0855','0856','0857','0858','0877','0878','0881','0882','0883','0884','0885','0886','0887','0888','0889','0895','0896','0897','0898','0899'];
+const JOBS = ['Karyawan Swasta','Guru','Dokter','Perawat','Pengusaha','Desainer','Programmer','Akuntan','Marketing','Wiraswasta','Dosen','Pilot','Jurnalis','Koki','Fotografer','Konsultan','Insinyur','Apoteker','Pengacara','Ilustrator'];
+let profiles = [], curProf = null;
+function loadProfiles() { try { profiles = JSON.parse(localStorage.getItem('tm_profiles')) || []; } catch { profiles = []; } }
+function saveProfiles() { localStorage.setItem('tm_profiles', JSON.stringify(profiles.slice(0, 8))); }
+function makeProfile(gender) {
+  const g = gender === 'acak' ? (Math.random() < .5 ? 'pria' : 'wanita') : gender;
+  const first = g === 'pria' ? MALE_N : FEM_N;
+  const name = first[Math.random() * first.length | 0] + ' ' + LAST_ID[Math.random() * LAST_ID.length | 0];
+  const age = 18 + Math.floor(Math.random() * 48);
+  const y = new Date().getFullYear() - age;
+  const m = String(1 + Math.floor(Math.random() * 12)).padStart(2, '0');
+  const d = String(1 + Math.floor(Math.random() * 28)).padStart(2, '0');
+  const city = CITIES[Math.random() * CITIES.length | 0];
+  const street = STREETS[Math.random() * STREETS.length | 0] + ' No. ' + (1 + Math.floor(Math.random() * 199)) +
+    ', RT ' + String(Math.floor(Math.random() * 30) + 1).padStart(3, '0') + '/RW ' + String(Math.floor(Math.random() * 15) + 1).padStart(3, '0');
+  const phone = PHONE_PREFIX[Math.random() * PHONE_PREFIX.length | 0] + '-' +
+    String(Math.floor(Math.random() * 1e8)).padStart(8, '0').replace(/(\d{4})(\d{4})/, '$1-$2');
+  return { gender: g, name, dob: `${d}/${m}/${y}`, age, phone, street, city: city.c, prov: city.p, zip: city.z, job: JOBS[Math.random() * JOBS.length | 0], ts: Date.now() };
+}
+function renderProfile() {
+  if (!curProf) return;
+  $('pName').textContent = curProf.name; $('pName').dataset.v = curProf.name;
+  $('pDob').textContent = curProf.dob + ' (' + curProf.age + ' th)'; $('pDob').dataset.v = curProf.dob;
+  $('pPhone').textContent = curProf.phone; $('pPhone').dataset.v = curProf.phone;
+  $('pStreet').textContent = curProf.street; $('pStreet').dataset.v = curProf.street;
+  $('pCity').textContent = curProf.city + ', ' + curProf.prov; $('pCity').dataset.v = curProf.city + ', ' + curProf.prov;
+  $('pZip').textContent = curProf.zip; $('pZip').dataset.v = curProf.zip;
+  $('pJob').textContent = curProf.job; $('pJob').dataset.v = curProf.job;
+}
+function renderProfiles() {
+  const el = $('profList');
+  if (!profiles.length) { el.innerHTML = '<p class="hint">Belum ada profil.</p>'; return; }
+  el.innerHTML = profiles.map((p, i) => `
+    <div class="prof-item" data-i="${i}" title="Klik untuk muat">
+      <span class="prov-chip ${p.gender === 'pria' ? 'prov-mt' : 'prov-gm'}" style="flex:none">${p.gender === 'pria' ? 'P' : 'W'}</span>
+      <span class="pname">${esc(p.name)} · ${p.age} th</span>
+      <span class="pcity">${esc(p.city)}</span>
+      <button class="x cx" data-delp="${i}" title="Hapus">×</button>
+    </div>`).join('');
+  el.querySelectorAll('.prof-item').forEach(item => item.onclick = e => {
+    if (e.target.dataset.delp) return;
+    curProf = profiles[+item.dataset.i]; renderProfile();
+    toast('👤 Profil dimuat');
+  });
+  el.querySelectorAll('[data-delp]').forEach(b => b.onclick = e => { e.stopPropagation();
+    profiles.splice(+b.dataset.delp, 1); saveProfiles(); renderProfiles();
+  });
+}
+$('pGen').onclick = () => {
+  curProf = makeProfile($('pGender').value);
+  profiles.unshift({ ...curProf });
+  saveProfiles();
+  renderProfile(); renderProfiles();
+  toast('👤 Profil fiktif dibuat');
+};
+$('pCopyAll').onclick = () => {
+  if (!curProf) return toast('Generate profil dulu');
+  const txt = `Nama: ${curProf.name}\nTgl lahir: ${curProf.dob} (${curProf.age} th)\nNo. HP: ${curProf.phone}\nAlamat: ${curProf.street}\nKota: ${curProf.city}, ${curProf.prov} ${curProf.zip}\nPekerjaan: ${curProf.job}`;
+  navigator.clipboard.writeText(txt).then(() => toast('📋 Profil lengkap disalin'));
+};
+$('pEmail').onclick = async () => {
+  if (!curProf) return toast('Generate profil dulu');
+  const provider = $('provider').value;
+  const local = curProf.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+  try {
+    const a = await provCreate(provider, local.slice(0, 30));
+    addresses = addresses.filter(x => x.address !== a.address);
+    addresses.unshift(a); save(); renderHistory(); setActive(a);
+    toast('🔗 Email dibuat: ' + a.address);
+  } catch(e) { toast('❌ ' + e.message); }
+};
+document.querySelectorAll('#profGrid .pc').forEach(b => b.onclick = () => {
+  const id = b.dataset.copy;
+  const v = $(id).dataset.v;
+  if (v) navigator.clipboard.writeText(v).then(() => toast('📋 Disalin: ' + v.slice(0, 30) + (v.length > 30 ? '…' : '')));
+});
+
 // ---------- generator ----------
 const ADJ = ['silent','cyber','lunar','neon','cosmic','swift','golden','velvet','mystic','turbo','ghost','solar','royal','crimson','frosty','quantum'];
 const NOUN = ['wolf','falcon','tiger','comet','nebula','pixel','shadow','storm','blaze','vortex','raven','lotus','ember','drift','koi','phoenix'];
@@ -1404,8 +1560,9 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
-loadSettings(); loadMarkers(); loadRules(); loadCards(); load();
+loadSettings(); loadMarkers(); loadRules(); loadCards(); loadProfiles(); load();
 if (cards.length) { curCard = cards[0]; renderCardVisual(); }
+if (profiles.length) { curProf = profiles[0]; renderProfile(); }
 </script>
 </body>
 </html>
