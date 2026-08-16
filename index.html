@@ -579,12 +579,17 @@
           </select>
           <button class="btn small primary" id="aGen" style="flex:none">⚡ Generate</button>
         </div>
+        <div class="row" style="margin-top:10px">
+          <input type="number" id="aMass" value="20" min="1" max="500" style="width:82px;padding-left:12px">
+          <button class="btn small ghost" id="aMassGen" style="flex:1">🔀 Dot massal (varian)</button>
+        </div>
         <div class="alias-box" id="aBox" style="display:none">
           <span class="at" id="aMeta">ALIAS</span>
           <span id="aOut">—</span>
         </div>
         <div class="row" style="margin-top:10px">
           <button class="btn small ghost" id="aCopy" style="flex:1">📋 Salin alias</button>
+          <button class="btn small ghost" id="aCopyAll" style="flex:1">📋 Salin semua</button>
           <button class="btn small ghost" id="aFilter" style="flex:1">🔗 Buka filter</button>
         </div>
         <div class="sec">
@@ -1203,6 +1208,28 @@ function dotTrick(local) {
   for (let i = 0; i < n; i++) { out += s[i]; if (picks.includes(i + 1)) out += '.'; }
   return out;
 }
+function genDotVariants(local, count) {
+  const s = local.replace(/\./g, '');
+  const n = s.length;
+  if (n < 2) return [s];
+  const maxComb = Math.pow(2, n - 1);
+  const want = Math.max(1, Math.min(count, maxComb));
+  const set = new Set();
+  let guard = 0;
+  while (set.size < want && guard++ < want * 60) {
+    let out = s[0];
+    for (let i = 1; i < n; i++) { if (Math.random() < 0.42) out += '.'; out += s[i]; }
+    set.add(out);
+  }
+  if (set.size < want) {
+    for (let mask = 0; mask < maxComb && set.size < want; mask++) {
+      let out = s[0];
+      for (let i = 1; i < n; i++) { if (mask & (1 << (i - 1))) out += '.'; out += s[i]; }
+      set.add(out);
+    }
+  }
+  return [...set].slice(0, want);
+}
 function buildAlias() {
   if (!realmail || !realmail.includes('@') || !realmail.includes('.')) throw new Error('Masukkan email asli yang valid dulu');
   const [local, domain] = realmail.split('@');
@@ -1275,6 +1302,23 @@ $('aGen').onclick = () => {
 $('aCopy').onclick = () => {
   if (!curAlias) return toast('Generate alias dulu');
   navigator.clipboard.writeText(curAlias.alias).then(() => toast('📋 Alias disalin'));
+};
+$('aCopyAll').onclick = () => {
+  if (!aliases.length) return toast('Belum ada alias');
+  navigator.clipboard.writeText(aliases.map(a => a.alias).join('\n')).then(() => toast('📋 ' + aliases.length + ' alias disalin'));
+};
+$('aMassGen').onclick = () => {
+  try {
+    if (!realmail || !realmail.includes('@') || detectProvider(realmail) !== 'gmail') throw new Error('Dot massal hanya untuk akun Gmail');
+    const [local, domain] = realmail.split('@');
+    const count = Math.max(1, Math.min(500, +$('aMass').value || 20));
+    const variants = genDotVariants(local, count).map(v => ({ alias: v + '@' + domain, prov: 'gmail', type: 'dot', cat: 'massal', ts: Date.now() }));
+    aliases.unshift(...variants);
+    saveAliases();
+    curAlias = variants[0];
+    renderAliasOut(); renderAliases();
+    toast('🔀 ' + variants.length + ' varian dot dibuat');
+  } catch (e) { toast('❌ ' + e.message); }
 };
 $('aFilter').onclick = () => {
   if (!curAlias) return toast('Generate alias dulu');
