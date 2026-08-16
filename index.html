@@ -1186,7 +1186,7 @@ const ALIAS_PROV = { gmail:{ label:'GMAIL', cls:'prov-gm', types:['plus','dot'] 
 let realmail = localStorage.getItem('tm_realmail') || '';
 let aliases = [], curAlias = null;
 function loadAliases() { try { aliases = JSON.parse(localStorage.getItem('tm_aliases')) || []; } catch { aliases = []; } }
-function saveAliases() { localStorage.setItem('tm_aliases', JSON.stringify(aliases.slice(0, 10))); }
+function saveAliases() { localStorage.setItem('tm_aliases', JSON.stringify(aliases.slice(0, 100))); }
 function detectProvider(email) {
   const d = (email.split('@')[1] || '').toLowerCase();
   if (d === 'gmail.com' || d === 'googlemail.com') return 'gmail';
