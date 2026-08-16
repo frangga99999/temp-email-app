@@ -96,10 +96,11 @@
   .row { display:flex; gap:8px; }
 
   /* tabs */
-  .tabs { display:flex; gap:6px; margin-bottom:16px; background:rgba(0,0,0,.25);
-    border:1px solid var(--border); border-radius:12px; padding:4px; }
-  .tab { flex:1; padding:9px 6px; border:none; background:transparent; color:var(--muted); font-size:12px;
-    font-weight:600; cursor:pointer; border-radius:9px; font-family:inherit; transition:all .18s; }
+  .tabs { display:flex; gap:5px; margin-bottom:16px; background:rgba(0,0,0,.25);
+    border:1px solid var(--border); border-radius:12px; padding:4px; overflow-x:auto; flex-wrap:nowrap; scrollbar-width:none; }
+  .tabs::-webkit-scrollbar { display:none; }
+  .tab { flex:none; padding:9px 11px; border:none; background:transparent; color:var(--muted); font-size:12px;
+    font-weight:600; cursor:pointer; border-radius:9px; font-family:inherit; transition:all .18s; white-space:nowrap; }
   .tab:hover { color:var(--text); }
   .tab.on { background:linear-gradient(135deg,rgba(99,102,241,.35),rgba(168,85,247,.22));
     color:#fff; box-shadow:0 2px 12px rgba(139,92,246,.3); }
@@ -231,6 +232,21 @@
   .prof-item .pcity { font-size:10px; color:var(--faint); flex:none; }
   .prof-item .cx { opacity:0; }
   .prof-item:hover .cx { opacity:1; }
+
+  /* ---------- alias gmail/yahoo ---------- */
+  .alias-box { font-family:'JetBrains Mono',monospace; font-size:14px; color:#fff;
+    background:rgba(0,0,0,.32); border:1px dashed rgba(139,92,246,.55); border-radius:12px;
+    padding:14px; text-align:center; word-break:break-all; margin-top:12px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06); }
+  .alias-box .at { display:block; font-size:9.5px; letter-spacing:1px; color:var(--faint);
+    text-transform:uppercase; margin-bottom:6px; }
+  .alias-item { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px;
+    border:1px solid var(--border); background:rgba(255,255,255,.03); font-size:11px; margin-bottom:6px;
+    cursor:pointer; transition:border-color .15s, background .15s; }
+  .alias-item:hover { border-color:rgba(139,92,246,.5); background:rgba(255,255,255,.05); }
+  .alias-item .aa { flex:1; font-family:'JetBrains Mono',monospace; color:var(--muted); word-break:break-all; }
+  .alias-item .cx { opacity:0; }
+  .alias-item:hover .cx { opacity:1; }
 
   /* ---------- RIGHT: inbox + reading pane ---------- */
   #rightPanel { display:grid; grid-template-columns:1fr; gap:0; }
@@ -446,6 +462,7 @@
         <button class="tab on" data-tab="addr">📒 Alamat</button>
         <button class="tab" data-tab="cards">💳 Kartu</button>
         <button class="tab" data-tab="prof">👤 Profil</button>
+        <button class="tab" data-tab="alias">🔀 Alias</button>
         <button class="tab" data-tab="rules">🛡 Aturan</button>
         <button class="tab" data-tab="pref">⚙️ Setelan</button>
       </div>
@@ -525,6 +542,57 @@
         <div class="sec">
           <h2 style="margin-bottom:8px">🗂 Riwayat Profil</h2>
           <div id="profList"><p class="hint">Belum ada profil.</p></div>
+        </div>
+      </div>
+
+      <div class="tabpane" id="tab-alias">
+        <p class="hint" style="margin-top:0;color:var(--amber)">⚠️ Ini <b>alias sekali pakai</b> dari akun aslimu (Gmail/Yahoo/Outlook), bukan alamat @gmail.com/@yahoo.com sementara — itu mustahil tanpa akun Google/Yahoo. Email tetap masuk inbox aslimu, tinggal di-filter/dihapus otomatis.</p>
+        <label for="realmail">Email aslimu</label>
+        <div class="row">
+          <input type="email" id="realmail" placeholder="kamu@gmail.com / kamu@yahoo.com" spellcheck="false" autocomplete="off" style="padding-left:12px">
+          <span class="prov-chip prov-gm" id="aProv" style="flex:none;align-self:center">?</span>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <select id="aType" style="flex:1">
+            <option value="plus">Gmail +tag (plus)</option>
+            <option value="dot">Gmail dot-trick (titik)</option>
+            <option value="yahoo">Yahoo -tag</option>
+          </select>
+          <select id="aCat" style="flex:1">
+            <option value="belanja">belanja</option>
+            <option value="sosmed">sosmed</option>
+            <option value="game">game</option>
+            <option value="promo">promo</option>
+            <option value="kerja">kerja</option>
+            <option value="forum">forum</option>
+            <option value="streaming">streaming</option>
+            <option value="travel">travel</option>
+            <option value="news">news</option>
+            <option value="lain">lain</option>
+          </select>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <select id="aBatch" style="flex:1">
+            <option value="1">1 alias</option>
+            <option value="3">3 alias</option>
+            <option value="5">5 alias</option>
+          </select>
+          <button class="btn small primary" id="aGen" style="flex:none">⚡ Generate</button>
+        </div>
+        <div class="alias-box" id="aBox" style="display:none">
+          <span class="at" id="aMeta">ALIAS</span>
+          <span id="aOut">—</span>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn small ghost" id="aCopy" style="flex:1">📋 Salin alias</button>
+          <button class="btn small ghost" id="aFilter" style="flex:1">🔗 Buka filter</button>
+        </div>
+        <div class="sec">
+          <h2 style="margin-bottom:8px">🗂 Riwayat Alias</h2>
+          <div id="aliasList"><p class="hint">Belum ada alias.</p></div>
+        </div>
+        <div class="sec">
+          <p class="hint">💡 <b>Tips Gmail:</b> buat filter dengan subjek/kepada <code>to:(alias)</code> lalu pilih "Skip the Inbox (Archive)" + label otomatis — spam dari situs itu tak akan membanjiri inbox utamamu.</p>
         </div>
       </div>
 
@@ -1108,6 +1176,114 @@ document.querySelectorAll('#profGrid .pc').forEach(b => b.onclick = () => {
   if (v) navigator.clipboard.writeText(v).then(() => toast('📋 Disalin: ' + v.slice(0, 30) + (v.length > 30 ? '…' : '')));
 });
 
+// ---------- alias gmail/yahoo ----------
+const ALIAS_PROV = { gmail:{ label:'GMAIL', cls:'prov-gm', types:['plus','dot'] }, yahoo:{ label:'YAHOO', cls:'prov-mt', types:['yahoo'] }, outlook:{ label:'OUTLOOK', cls:'prov-gm', types:['plus'] }, other:{ label:'LAIN', cls:'prov-mt', types:['plus'] } };
+let realmail = localStorage.getItem('tm_realmail') || '';
+let aliases = [], curAlias = null;
+function loadAliases() { try { aliases = JSON.parse(localStorage.getItem('tm_aliases')) || []; } catch { aliases = []; } }
+function saveAliases() { localStorage.setItem('tm_aliases', JSON.stringify(aliases.slice(0, 10))); }
+function detectProvider(email) {
+  const d = (email.split('@')[1] || '').toLowerCase();
+  if (d === 'gmail.com' || d === 'googlemail.com') return 'gmail';
+  if (d === 'yahoo.com' || d.endsWith('.yahoo.com')) return 'yahoo';
+  if (d === 'outlook.com' || d === 'hotmail.com' || d === 'live.com' || d === 'msn.com') return 'outlook';
+  return 'other';
+}
+function genTag(cat) { return cat + '.' + Math.random().toString(36).slice(2, 6); }
+function dotTrick(local) {
+  const n = local.length;
+  if (n < 2) return local;
+  const pos = [];
+  for (let i = 1; i < n; i++) pos.push(i);
+  for (let i = pos.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [pos[i], pos[j]] = [pos[j], pos[i]]; }
+  const k = Math.min(3, Math.max(1, Math.floor(n / 3)));
+  const picks = pos.slice(0, k).sort((a, b) => a - b);
+  let out = '';
+  for (let i = 0; i < n; i++) { out += local[i]; if (picks.includes(i + 1)) out += '.'; }
+  return out;
+}
+function buildAlias() {
+  if (!realmail || !realmail.includes('@') || !realmail.includes('.')) throw new Error('Masukkan email asli yang valid dulu');
+  const [local, domain] = realmail.split('@');
+  if (!local || !domain) throw new Error('Format email salah');
+  const prov = detectProvider(realmail);
+  const cat = $('aCat').value;
+  const type = $('aType').value;
+  let alias;
+  if (prov === 'yahoo') alias = `${local}-${genTag(cat)}@${domain}`;
+  else if (type === 'dot' && prov === 'gmail') alias = `${dotTrick(local)}@${domain}`;
+  else alias = `${local}+${genTag(cat)}@${domain}`;
+  return { alias, prov, type: prov === 'yahoo' ? 'minus' : type, cat, ts: Date.now() };
+}
+function renderAliasOut() {
+  if (!curAlias) return;
+  $('aBox').style.display = 'block';
+  const t = { plus: 'GMAIL +TAG', dot: 'GMAIL DOT-TRICK', minus: 'YAHOO -TAG' }[curAlias.type] || 'ALIAS';
+  $('aMeta').textContent = t + ' · ' + curAlias.cat;
+  $('aOut').textContent = curAlias.alias;
+}
+function renderAliases() {
+  const el = $('aliasList');
+  if (!aliases.length) { el.innerHTML = '<p class="hint">Belum ada alias.</p>'; return; }
+  el.innerHTML = aliases.map((a, i) => `
+    <div class="alias-item" data-i="${i}" title="Klik untuk muat">
+      <span class="prov-chip ${ALIAS_PROV[a.prov] ? ALIAS_PROV[a.prov].cls : 'prov-gm'}" style="flex:none">${ALIAS_PROV[a.prov] ? ALIAS_PROV[a.prov].label : '?'}</span>
+      <span class="aa">${esc(a.alias)}</span>
+      <button class="x cx" data-dela="${i}" title="Hapus">×</button>
+    </div>`).join('');
+  el.querySelectorAll('.alias-item').forEach(item => item.onclick = e => {
+    if (e.target.dataset.dela) return;
+    curAlias = aliases[+item.dataset.i]; renderAliasOut();
+  });
+  el.querySelectorAll('[data-dela]').forEach(b => b.onclick = e => { e.stopPropagation();
+    aliases.splice(+b.dataset.dela, 1); saveAliases(); renderAliases();
+  });
+}
+function updateAliasProvider() {
+  const prov = detectProvider(realmail);
+  const meta = ALIAS_PROV[prov] || ALIAS_PROV.other;
+  $('aProv').textContent = meta.label;
+  $('aProv').className = 'prov-chip ' + meta.cls;
+  const opts = meta.types;
+  const keep = $('aType').value;
+  $('aType').innerHTML = opts.map(t => ({
+    plus: '<option value="plus">Gmail +tag (plus)</option>',
+    dot: '<option value="dot">Gmail dot-trick (titik)</option>',
+    yahoo: '<option value="yahoo">Yahoo -tag</option>',
+  })[t]).join('');
+  if (opts.includes(keep)) $('aType').value = keep;
+}
+$('realmail').onchange = () => {
+  realmail = $('realmail').value.trim().toLowerCase();
+  localStorage.setItem('tm_realmail', realmail);
+  updateAliasProvider();
+  toast(realmail ? '🔗 Email asli disimpan' : 'Email dikosongkan');
+};
+$('aGen').onclick = () => {
+  try {
+    const n = +$('aBatch').value;
+    const made = [];
+    for (let i = 0; i < n; i++) made.push(buildAlias());
+    aliases.unshift(...made);
+    saveAliases();
+    curAlias = made[0];
+    renderAliasOut(); renderAliases();
+    toast(n > 1 ? `🔀 ${n} alias dibuat` : '🔀 Alias dibuat');
+  } catch (e) { toast('❌ ' + e.message); }
+};
+$('aCopy').onclick = () => {
+  if (!curAlias) return toast('Generate alias dulu');
+  navigator.clipboard.writeText(curAlias.alias).then(() => toast('📋 Alias disalin'));
+};
+$('aFilter').onclick = () => {
+  if (!curAlias) return toast('Generate alias dulu');
+  if (curAlias.prov === 'gmail') {
+    window.open('https://mail.google.com/mail/u/0/#search/to%3A' + encodeURIComponent(curAlias.alias), '_blank');
+  } else {
+    toast('💡 Filter manual di ' + (curAlias.prov === 'yahoo' ? 'Yahoo' : 'email') + ' dengan penerima: ' + curAlias.alias);
+  }
+};
+
 // ---------- generator ----------
 const ADJ = ['silent','cyber','lunar','neon','cosmic','swift','golden','velvet','mystic','turbo','ghost','solar','royal','crimson','frosty','quantum'];
 const NOUN = ['wolf','falcon','tiger','comet','nebula','pixel','shadow','storm','blaze','vortex','raven','lotus','ember','drift','koi','phoenix'];
@@ -1560,9 +1736,10 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
-loadSettings(); loadMarkers(); loadRules(); loadCards(); loadProfiles(); load();
+loadSettings(); loadMarkers(); loadRules(); loadCards(); loadProfiles(); loadAliases(); load();
 if (cards.length) { curCard = cards[0]; renderCardVisual(); }
 if (profiles.length) { curProf = profiles[0]; renderProfile(); }
+$('realmail').value = realmail; updateAliasProvider(); renderAliases();
 </script>
 </body>
 </html>
