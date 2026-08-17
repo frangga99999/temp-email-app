@@ -248,6 +248,19 @@
   .alias-item .cx { opacity:0; }
   .alias-item:hover .cx { opacity:1; }
 
+  /* ---------- kredensial ---------- */
+  .chk { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--muted); cursor:pointer; flex:1; }
+  .chk input { accent-color:#8b5cf6; }
+  .pwbar { height:6px; border-radius:99px; background:rgba(0,0,0,.32); overflow:hidden; margin-top:10px; }
+  .pwbar i { display:block; height:100%; width:0%; border-radius:99px; transition:width .25s, background .25s; }
+  .cred-item { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px;
+    border:1px solid var(--border); background:rgba(255,255,255,.03); font-size:11px; margin-bottom:6px;
+    cursor:pointer; transition:border-color .15s, background .15s; }
+  .cred-item:hover { border-color:rgba(139,92,246,.5); background:rgba(255,255,255,.05); }
+  .cred-item .cu { flex:1; font-family:'JetBrains Mono',monospace; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cred-item .cx { opacity:0; }
+  .cred-item:hover .cx { opacity:1; }
+
   /* ---------- RIGHT: inbox + reading pane ---------- */
   #rightPanel { display:grid; grid-template-columns:1fr; gap:0; }
   #rightPanel.split { grid-template-columns:minmax(320px,46%) 1fr; gap:16px; }
@@ -463,6 +476,7 @@
         <button class="tab" data-tab="cards">💳 Kartu</button>
         <button class="tab" data-tab="prof">👤 Profil</button>
         <button class="tab" data-tab="alias">🔀 Alias</button>
+        <button class="tab" data-tab="cred">🔐 Akses</button>
         <button class="tab" data-tab="rules">🛡 Aturan</button>
         <button class="tab" data-tab="pref">⚙️ Setelan</button>
       </div>
@@ -547,11 +561,13 @@
 
       <div class="tabpane" id="tab-alias">
         <p class="hint" style="margin-top:0;color:var(--amber)">⚠️ Ini <b>alias sekali pakai</b> dari akun aslimu (Gmail/Yahoo/Outlook), bukan alamat @gmail.com/@yahoo.com sementara — itu mustahil tanpa akun Google/Yahoo. Email tetap masuk inbox aslimu, tinggal di-filter/dihapus otomatis.</p>
-        <label for="realmail">Email aslimu</label>
+        <label for="realmail">Akun aslimu (tambah beberapa, klik untuk aktif)</label>
         <div class="row">
           <input type="email" id="realmail" placeholder="kamu@gmail.com / kamu@yahoo.com" spellcheck="false" autocomplete="off" style="padding-left:12px">
+          <button class="btn small ghost" id="accAdd" style="flex:none" title="Tambah akun">➕</button>
           <span class="prov-chip prov-gm" id="aProv" style="flex:none;align-self:center">?</span>
         </div>
+        <div id="accList" style="margin-top:8px"></div>
         <div class="row" style="margin-top:10px">
           <select id="aType" style="flex:1">
             <option value="plus">Gmail +tag (plus)</option>
@@ -583,6 +599,9 @@
           <input type="number" id="aMass" value="20" min="1" max="500" style="width:82px;padding-left:12px">
           <button class="btn small ghost" id="aMassGen" style="flex:1">🔀 Dot massal (varian)</button>
         </div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn small ghost" id="aMassAll" style="flex:1">🔀 Dot massal SEMUA akun</button>
+        </div>
         <div class="alias-box" id="aBox" style="display:none">
           <span class="at" id="aMeta">ALIAS</span>
           <span id="aOut">—</span>
@@ -598,6 +617,43 @@
         </div>
         <div class="sec">
           <p class="hint">💡 <b>Tips Gmail:</b> buat filter dengan subjek/kepada <code>to:(alias)</code> lalu pilih "Skip the Inbox (Archive)" + label otomatis — spam dari situs itu tak akan membanjiri inbox utamamu.</p>
+        </div>
+      </div>
+
+      <div class="tabpane" id="tab-cred">
+        <p class="hint" style="margin-top:0">Username + password acak untuk isi form pendaftaran. Semua tersimpan lokal di browser-mu saja.</p>
+        <div class="row">
+          <select id="uType" style="flex:1">
+            <option value="acak">Username acak</option>
+            <option value="nama">Dari nama profil</option>
+            <option value="email">Dari email aktif</option>
+          </select>
+          <input type="number" id="pwLen" value="16" min="6" max="64" style="width:82px;padding-left:12px" title="Panjang password">
+        </div>
+        <div class="row" style="margin-top:8px">
+          <label class="chk"><input type="checkbox" id="pwSym" checked> Simbol</label>
+          <label class="chk"><input type="checkbox" id="pwNum" checked> Angka</label>
+          <label class="chk"><input type="checkbox" id="pwRead"> Mudah dibaca</label>
+        </div>
+        <button class="btn small primary" id="credGen" style="width:100%;margin-top:10px">⚡ Generate</button>
+        <div class="alias-box" style="margin-top:12px">
+          <span class="at">USERNAME</span>
+          <span id="cUser">—</span>
+        </div>
+        <div class="alias-box" style="margin-top:8px">
+          <span class="at">PASSWORD</span>
+          <span id="cPass" style="letter-spacing:1px">—</span>
+        </div>
+        <div class="pwbar"><i id="pwBar"></i></div>
+        <p class="hint" id="pwLabel" style="margin-top:5px"></p>
+        <div class="row" style="margin-top:10px">
+          <button class="btn small ghost" id="cCopyUser" style="flex:1">📋 Username</button>
+          <button class="btn small ghost" id="cCopyPass" style="flex:1">📋 Password</button>
+          <button class="btn small ghost" id="cCopyCred" style="flex:1">📋 Semua</button>
+        </div>
+        <div class="sec">
+          <h2 style="margin-bottom:8px">🗂 Riwayat</h2>
+          <div id="credList"><p class="hint">Belum ada kredensial.</p></div>
         </div>
       </div>
 
@@ -1187,6 +1243,58 @@ let realmail = localStorage.getItem('tm_realmail') || '';
 let aliases = [], curAlias = null;
 function loadAliases() { try { aliases = JSON.parse(localStorage.getItem('tm_aliases')) || []; } catch { aliases = []; } }
 function saveAliases() { localStorage.setItem('tm_aliases', JSON.stringify(aliases.slice(0, 100))); }
+let accounts = [];
+function loadAccounts() { try { accounts = JSON.parse(localStorage.getItem('tm_accounts')) || []; } catch { accounts = []; } }
+function saveAccounts() { localStorage.setItem('tm_accounts', JSON.stringify(accounts)); }
+function renderAccounts() {
+  const el = $('accList');
+  if (!accounts.length) { el.innerHTML = ''; return; }
+  el.innerHTML = accounts.map((em, i) => {
+    const prov = detectProvider(em);
+    const meta = ALIAS_PROV[prov] || ALIAS_PROV.other;
+    return `<div class="alias-item" data-acc="${i}" title="Klik untuk aktifkan" style="cursor:pointer">
+      <span class="prov-chip ${meta.cls}" style="flex:none">${meta.label}</span>
+      <span class="aa">${esc(em)}</span>
+      <button class="x cx" data-delacc="${i}" title="Hapus">×</button>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('[data-acc]').forEach(item => item.onclick = e => {
+    if (e.target.dataset.delacc) return;
+    realmail = accounts[+item.dataset.acc];
+    $('realmail').value = realmail;
+    localStorage.setItem('tm_realmail', realmail);
+    updateAliasProvider();
+  });
+  el.querySelectorAll('[data-delacc]').forEach(b => b.onclick = e => { e.stopPropagation();
+    accounts.splice(+b.dataset.delacc, 1); saveAccounts(); renderAccounts();
+  });
+}
+$('accAdd').onclick = () => {
+  const em = $('realmail').value.trim().toLowerCase();
+  if (!em || !em.includes('@') || !em.includes('.')) return toast('❌ Email tidak valid');
+  if (accounts.includes(em)) return toast('Akun sudah ada');
+  accounts.unshift(em); saveAccounts();
+  realmail = em; localStorage.setItem('tm_realmail', em);
+  updateAliasProvider(); renderAccounts();
+  toast('➕ Akun ditambahkan');
+};
+$('aMassAll').onclick = () => {
+  try {
+    const g = accounts.filter(a => detectProvider(a) === 'gmail');
+    if (!g.length) throw new Error('Belum ada akun Gmail di daftar');
+    const n = Math.max(1, Math.min(100, +$('aMass').value || 10));
+    const all = [];
+    for (const em of g) {
+      const [local, domain] = em.split('@');
+      for (const v of genDotVariants(local, n)) all.push({ alias: v + '@' + domain, prov: 'gmail', type: 'dot', cat: 'massal', ts: Date.now() });
+    }
+    aliases.unshift(...all);
+    saveAliases();
+    curAlias = all[0];
+    renderAliasOut(); renderAliases();
+    toast(`🔀 ${all.length} varian dari ${g.length} akun`);
+  } catch (e) { toast('❌ ' + e.message); }
+};
 function detectProvider(email) {
   const d = (email.split('@')[1] || '').toLowerCase();
   if (d === 'gmail.com' || d === 'googlemail.com') return 'gmail';
@@ -1327,6 +1435,96 @@ $('aFilter').onclick = () => {
   } else {
     toast('💡 Filter manual di ' + (curAlias.prov === 'yahoo' ? 'Yahoo' : 'email') + ' dengan penerima: ' + curAlias.alias);
   }
+};
+
+// ---------- kredensial (username + password) ----------
+const U_ADJ = ['neon','cyber','lunar','solar','turbo','ghost','silent','golden','velvet','mystic','crimson','frosty','quantum','shadow','storm','blaze','royal','cosmic'];
+const U_NOUN = ['wolf','falcon','tiger','comet','nebula','pixel','raven','lotus','ember','drift','koi','phoenix','vortex','blossom','clover','echo'];
+let creds = [], curCred = null;
+function loadCreds() { try { creds = JSON.parse(localStorage.getItem('tm_creds')) || []; } catch { creds = []; } }
+function saveCreds() { localStorage.setItem('tm_creds', JSON.stringify(creds.slice(0, 20))); }
+function genUsername(type) {
+  const n = Math.floor(Math.random() * 90) + 10;
+  if (type === 'email') {
+    const em = (realmail || (active && active.address) || '');
+    const l = em.split('@')[0].replace(/[^a-z0-9]/g, '').slice(0, 14);
+    return l || (U_ADJ[Math.random() * U_ADJ.length | 0] + U_NOUN[Math.random() * U_NOUN.length | 0] + n);
+  }
+  if (type === 'nama') {
+    const base = ((curProf && curProf.name) || 'budi santoso').toLowerCase().replace(/[^a-z]/g, '').slice(0, 14);
+    return base + n;
+  }
+  return U_ADJ[Math.random() * U_ADJ.length | 0] + U_NOUN[Math.random() * U_NOUN.length | 0] + n;
+}
+function genPassword(len, sym, num, readable) {
+  let pool = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  if (num) pool += '0123456789';
+  if (sym) pool += '!@#$%^&*_-+=';
+  if (readable) pool = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const lower = 'abcdefghijklmnopqrstuvwxyz', upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', digits = '0123456789', syms = '!@#$%^&*_-+=';
+  let pw = '';
+  pw += lower[Math.random() * 26 | 0];
+  pw += upper[Math.random() * 26 | 0];
+  if (num) pw += digits[Math.random() * 10 | 0];
+  if (sym && !readable) pw += syms[Math.random() * syms.length | 0];
+  while (pw.length < len) pw += pool[Math.random() * pool.length | 0];
+  pw = pw.split('').sort(() => Math.random() - .5).join('');
+  return pw.slice(0, len);
+}
+function pwStrength(pw) {
+  let s = 0;
+  if (pw.length >= 8) s++; if (pw.length >= 12) s++; if (pw.length >= 16) s++;
+  if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) s++;
+  if (/\d/.test(pw)) s++;
+  if (/[^a-zA-Z0-9]/.test(pw)) s++;
+  const labels = ['Lemah','Sedang','Kuat','Sangat kuat'];
+  const colors = ['#f87171','#fbbf24','#34d399','#22d3ee'];
+  const idx = Math.min(3, Math.max(0, s - 2));
+  return { label: labels[idx], color: colors[idx], pct: Math.min(100, 20 + s * 14) };
+}
+function renderCred() {
+  if (!curCred) return;
+  $('cUser').textContent = curCred.user;
+  $('cPass').textContent = curCred.pass;
+  const st = pwStrength(curCred.pass);
+  const bar = $('pwBar');
+  bar.style.width = st.pct + '%';
+  bar.style.background = st.color;
+  $('pwLabel').innerHTML = `Kekuatan: <b style="color:${st.color}">${st.label}</b> · ${curCred.pass.length} karakter`;
+}
+function renderCreds() {
+  const el = $('credList');
+  if (!creds.length) { el.innerHTML = '<p class="hint">Belum ada kredensial.</p>'; return; }
+  el.innerHTML = creds.map((c, i) => `
+    <div class="cred-item" data-i="${i}" title="Klik untuk muat">
+      <span class="cu">${esc(c.user)} · ${'•'.repeat(Math.min(10, c.pass.length))}</span>
+      <button class="x cx" data-delc="${i}" title="Hapus">×</button>
+    </div>`).join('');
+  el.querySelectorAll('.cred-item').forEach(item => item.onclick = e => {
+    if (e.target.dataset.delc) return;
+    curCred = creds[+item.dataset.i]; renderCred();
+  });
+  el.querySelectorAll('[data-delc]').forEach(b => b.onclick = e => { e.stopPropagation();
+    creds.splice(+b.dataset.delc, 1); saveCreds(); renderCreds();
+  });
+}
+$('credGen').onclick = () => {
+  curCred = {
+    user: genUsername($('uType').value),
+    pass: genPassword(+$('pwLen').value || 16, $('pwSym').checked, $('pwNum').checked, $('pwRead').checked),
+    ts: Date.now(),
+  };
+  creds.unshift({ ...curCred });
+  saveCreds();
+  renderCred(); renderCreds();
+  toast('🔐 Kredensial dibuat');
+};
+$('cCopyUser').onclick = () => { if (!curCred) return toast('Generate dulu'); navigator.clipboard.writeText(curCred.user).then(() => toast('📋 Username disalin')); };
+$('cCopyPass').onclick = () => { if (!curCred) return toast('Generate dulu'); navigator.clipboard.writeText(curCred.pass).then(() => toast('📋 Password disalin')); };
+$('cCopyCred').onclick = () => {
+  if (!curCred) return toast('Generate dulu');
+  const txt = `Username: ${curCred.user}\nPassword: ${curCred.pass}`;
+  navigator.clipboard.writeText(txt).then(() => toast('📋 Kredensial disalin'));
 };
 
 // ---------- generator ----------
@@ -1781,10 +1979,10 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
-loadSettings(); loadMarkers(); loadRules(); loadCards(); loadProfiles(); loadAliases(); load();
+loadSettings(); loadMarkers(); loadRules(); loadCards(); loadProfiles(); loadAliases(); loadAccounts(); loadCreds(); load();
 if (cards.length) { curCard = cards[0]; renderCardVisual(); }
 if (profiles.length) { curProf = profiles[0]; renderProfile(); }
-$('realmail').value = realmail; updateAliasProvider(); renderAliases();
+$('realmail').value = realmail; updateAliasProvider(); renderAliases(); renderAccounts();
 </script>
 </body>
 </html>
