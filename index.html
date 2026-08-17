@@ -711,12 +711,18 @@
           <p class="hint">Proxy berjalan di VPS port 20129 via Cloudflare Tunnel. Token melindungi proxy dari pemakaian orang lain. Tanpa keduanya, provider mail.tm tidak bisa dipakai.</p>
         </div>
         <div class="sec">
-          <div class="row">
+          <label for="buPass">Password backup (opsional — untuk enkripsi AES-GCM)</label>
+          <input type="password" id="buPass" placeholder="kosongkan = tanpa enkripsi" spellcheck="false" autocomplete="off" style="padding-left:12px">
+          <div class="row" style="margin-top:8px">
             <button class="btn small ghost" id="backup" style="flex:1">💾 Backup</button>
             <button class="btn small ghost" id="restore" style="flex:1">📥 Restore</button>
             <input type="file" id="restoreFile" accept=".json" style="display:none">
           </div>
-          <p class="hint">Menyimpan alamat, bintang, tag, aturan &amp; pengaturan. Email &amp; inbox terhapus otomatis ±1 jam (guerrillamail) / beberapa hari (mail.tm).</p>
+          <p class="hint">Backup mencakup semua data (alamat, alias, akun, kredensial, profil, kartu, aturan, pengaturan). Dengan password → file terenkripsi AES-GCM, hanya bisa dibuka dengan password itu. Password <b>tidak pernah disimpan</b>.</p>
+        </div>
+        <div class="sec">
+          <button class="btn small ghost" id="purge" style="width:100%;color:var(--red);border-color:rgba(248,113,113,.35)">🗑️ Hapus SEMUA data (lokal)</button>
+          <p class="hint">Menghapus seluruh data dari browser ini — alamat, kredensial, profil, kartu, alias, aturan. Tidak dapat dibatalkan.</p>
         </div>
       </div>
     </div>
@@ -1684,34 +1690,96 @@ function restartTimer() {
   if (!settings.paused && active) timer = setInterval(loadMessages, settings.interval * 1000);
 }
 
-// ---------- backup / restore ----------
-$('backup').onclick = () => {
-  const data = { app:'tempmail-pro', v:1, ts: Date.now(), settings, rules, addresses, markers };
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type:'application/json' }));
-  a.download = `tempmail-backup-${new Date().toISOString().slice(0,10)}.json`;
-  a.click(); URL.revokeObjectURL(a.href);
-  toast('💾 Backup diunduh');
+// ---------- backup / restore (lengkap + enkripsi AES-GCM) ----------
+function collectAllData() {
+  return {
+    app:'tempmail-pro', v:2, ts: Date.now(),
+    settings, rules, addresses, markers, cards, profiles, aliases, accounts, creds,
+    realmail: localStorage.getItem('tm_realmail') || '',
+    proxy: { url: localStorage.getItem('tm_proxy') || '', token: localStorage.getItem('tm_proxy_token') || '' },
+  };
+}
+const te = new TextEncoder(), td = new TextDecoder();
+function b64(buf) { let s=''; const a=new Uint8Array(buf); for(let i=0;i<a.length;i++) s+=String.fromCharCode(a[i]); return btoa(s); }
+function unb64(s) { const b=atob(s); const a=new Uint8Array(b.length); for(let i=0;i<b.length;i++) a[i]=b.charCodeAt(i); return a; }
+async function deriveKey(pw, salt) {
+  const m = await crypto.subtle.importKey('raw', te.encode(pw), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name:'PBKDF2', salt, iterations:200000, hash:'SHA-256' }, m, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']);
+}
+async function encryptPayload(obj, pw) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKey(pw, salt);
+  const ct = await crypto.subtle.encrypt({ name:'AES-GCM', iv }, key, te.encode(JSON.stringify(obj)));
+  return { encrypted:true, salt:b64(salt), iv:b64(iv), data:b64(ct) };
+}
+async function decryptPayload(env, pw) {
+  const key = await deriveKey(pw, unb64(env.salt));
+  const pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv:unb64(env.iv) }, key, unb64(env.data));
+  return JSON.parse(td.decode(pt));
+}
+function applyAllData(d) {
+  if (d.settings) { settings = { ...settings, ...d.settings }; localStorage.setItem('tm_settings', JSON.stringify(settings)); }
+  if (Array.isArray(d.addresses)) { addresses = d.addresses; localStorage.setItem('tm_addresses', JSON.stringify(addresses)); }
+  if (d.rules) { rules = d.rules; saveRules(); }
+  if (d.markers) { markers = d.markers; saveMarkers(); }
+  if (Array.isArray(d.cards)) { cards = d.cards; saveCards(); }
+  if (Array.isArray(d.profiles)) { profiles = d.profiles; saveProfiles(); }
+  if (Array.isArray(d.aliases)) { aliases = d.aliases; saveAliases(); }
+  if (Array.isArray(d.accounts)) { accounts = d.accounts; saveAccounts(); }
+  if (Array.isArray(d.creds)) { creds = d.creds; saveCreds(); }
+  if (d.realmail !== undefined) { realmail = d.realmail; localStorage.setItem('tm_realmail', realmail); }
+  if (d.proxy) {
+    if (d.proxy.url !== undefined) { mtProxy = d.proxy.url; localStorage.setItem('tm_proxy', mtProxy); }
+    if (d.proxy.token !== undefined) { mtToken = d.proxy.token; localStorage.setItem('tm_proxy_token', mtToken); }
+  }
+}
+$('backup').onclick = async () => {
+  try {
+    const data = collectAllData();
+    const pw = $('buPass').value;
+    let out = data;
+    if (pw) { out = await encryptPayload(data, pw); out.app = 'tempmail-pro'; out.v = 2; }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(out, null, 2)], { type:'application/json' }));
+    a.download = `tempmail-backup-${new Date().toISOString().slice(0,10)}.json`;
+    a.click(); URL.revokeObjectURL(a.href);
+    toast(pw ? '🔒 Backup terenkripsi diunduh' : '💾 Backup diunduh (tanpa enkripsi)');
+    $('buPass').value = '';
+  } catch(err) { toast('❌ ' + err.message); }
 };
 $('restore').onclick = () => $('restoreFile').click();
 $('restoreFile').onchange = e => {
   const f = e.target.files[0]; if (!f) return;
   const rd = new FileReader();
-  rd.onload = () => {
+  rd.onload = async () => {
     try {
-      const d = JSON.parse(rd.result);
+      let d = JSON.parse(rd.result);
+      if (d.encrypted) {
+        const pw = prompt('Backup terenkripsi. Masukkan password:');
+        if (!pw) return toast('Dibatalkan');
+        d = await decryptPayload(d, pw);
+      }
       if (d.app !== 'tempmail-pro') throw new Error('bukan file backup TempMail Pro');
-      if (Array.isArray(d.addresses)) { addresses = d.addresses; localStorage.setItem('tm_addresses', JSON.stringify(addresses)); }
-      if (d.settings) { settings = { ...settings, ...d.settings }; localStorage.setItem('tm_settings', JSON.stringify(settings)); }
-      if (d.rules) { rules = d.rules; saveRules(); renderRules(); }
-      if (d.markers) { markers = d.markers; saveMarkers(); }
-      loadSettings(); renderHistory();
+      applyAllData(d);
+      loadSettings(); loadMarkers(); loadRules(); loadCards(); loadProfiles(); loadAliases(); loadAccounts(); loadCreds();
+      renderRules(); renderHistory(); renderCards(); renderProfiles(); renderAliases(); renderAccounts(); renderCreds();
+      $('realmail').value = realmail; updateAliasProvider();
       if (addresses.length) setActive(addresses[0]);
+      if (cards.length) { curCard = cards[0]; renderCardVisual(); }
+      if (profiles.length) { curProf = profiles[0]; renderProfile(); }
       toast('📥 Restore berhasil');
     } catch(err) { toast('❌ Restore gagal: ' + err.message); }
   };
   rd.readAsText(f);
   e.target.value = '';
+};
+$('purge').onclick = () => {
+  if (!confirm('Hapus SEMUA data dari browser ini?\n(alamat, alias, akun, kredensial, profil, kartu, aturan, pengaturan)\n\nIni tidak bisa dibatalkan. Pastikan sudah backup dulu.')) return;
+  if (!confirm('Benar-benar yakin? Semua data akan hilang permanen.')) return;
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('tm_'));
+  keys.forEach(k => localStorage.removeItem(k));
+  location.reload();
 };
 
 // ---------- inbox ----------
