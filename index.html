@@ -443,11 +443,15 @@
       </div>
     </div>
     <div class="hero-gen">
-      <label>Username <span>— kosongkan untuk acak</span></label>
+      <label>Username <span>— pola natural lebih jarang ditolak situs</span></label>
       <div class="row">
+        <select id="unameMode" style="width:82px;flex:none">
+          <option value="natural">natural</option>
+          <option value="acak">acak</option>
+        </select>
         <div class="input-wrap">
           <span class="ic">👤</span>
-          <input type="text" id="uname" placeholder="contoh: neonfalcon42" spellcheck="false" autocomplete="off">
+          <input type="text" id="uname" placeholder="contoh: budi.santoso88" spellcheck="false" autocomplete="off">
         </div>
         <button class="btn ghost icon" id="dice" title="Acak username">🎲</button>
       </div>
@@ -568,6 +572,14 @@
           <span class="prov-chip prov-gm" id="aProv" style="flex:none;align-self:center">?</span>
         </div>
         <div id="accList" style="margin-top:8px"></div>
+        <div class="sec" style="margin-top:10px">
+          <label for="customDomain">🌐 Domain kustom (paling anti-block)</label>
+          <div class="row">
+            <input type="text" id="customDomain" placeholder="mail.akunku.com" spellcheck="false" autocomplete="off" style="padding-left:12px">
+            <button class="btn small ghost" id="customGen" style="flex:none">⚡ Alias</button>
+          </div>
+          <p class="hint">Pakai domain milikmu sendiri — mis. Cloudflare Email Routing (gratis, 5 menit setup) yang meneruskan semua email ke inbox aslimu. Alamat @domainmu tak akan masuk daftar hitam disposable. Butuh catch-all / routing ke akun aslimu.</p>
+        </div>
         <div class="row" style="margin-top:10px">
           <select id="aType" style="flex:1">
             <option value="plus">Gmail +tag (plus)</option>
@@ -1244,7 +1256,7 @@ document.querySelectorAll('#profGrid .pc').forEach(b => b.onclick = () => {
 });
 
 // ---------- alias gmail/yahoo ----------
-const ALIAS_PROV = { gmail:{ label:'GMAIL', cls:'prov-gm', types:['plus','dot'] }, yahoo:{ label:'YAHOO', cls:'prov-mt', types:['yahoo'] }, outlook:{ label:'OUTLOOK', cls:'prov-gm', types:['plus'] }, other:{ label:'LAIN', cls:'prov-mt', types:['plus'] } };
+const ALIAS_PROV = { gmail:{ label:'GMAIL', cls:'prov-gm', types:['plus','dot'] }, yahoo:{ label:'YAHOO', cls:'prov-mt', types:['yahoo'] }, outlook:{ label:'OUTLOOK', cls:'prov-gm', types:['plus'] }, custom:{ label:'DOMAIN SENDIRI', cls:'prov-mt', types:[] }, other:{ label:'LAIN', cls:'prov-mt', types:['plus'] } };
 let realmail = localStorage.getItem('tm_realmail') || '';
 let aliases = [], curAlias = null;
 function loadAliases() { try { aliases = JSON.parse(localStorage.getItem('tm_aliases')) || []; } catch { aliases = []; } }
@@ -1299,6 +1311,19 @@ $('aMassAll').onclick = () => {
     curAlias = all[0];
     renderAliasOut(); renderAliases();
     toast(`🔀 ${all.length} varian dari ${g.length} akun`);
+  } catch (e) { toast('❌ ' + e.message); }
+};
+$('customGen').onclick = () => {
+  try {
+    let d = $('customDomain').value.trim().toLowerCase().replace(/^@/, '');
+    if (!d || !d.includes('.')) throw new Error('Masukkan domain valid (cth: mail.akunku.com)');
+    const local = randName('natural').replace(/[^a-z0-9.]/g, '');
+    const alias = local + '@' + d;
+    aliases.unshift({ alias, prov: 'custom', type: 'catchall', cat: 'custom', ts: Date.now() });
+    saveAliases();
+    curAlias = aliases[0];
+    renderAliasOut(); renderAliases();
+    toast('🌐 Alias @' + d + ' dibuat');
   } catch (e) { toast('❌ ' + e.message); }
 };
 function detectProvider(email) {
@@ -1360,7 +1385,7 @@ function buildAlias() {
 function renderAliasOut() {
   if (!curAlias) return;
   $('aBox').style.display = 'block';
-  const t = { plus: 'GMAIL +TAG', dot: 'GMAIL DOT-TRICK', minus: 'YAHOO -TAG' }[curAlias.type] || 'ALIAS';
+  const t = { plus: 'GMAIL +TAG', dot: 'GMAIL DOT-TRICK', minus: 'YAHOO -TAG', catchall: 'DOMAIN SENDIRI' }[curAlias.type] || 'ALIAS';
   $('aMeta').textContent = t + ' · ' + curAlias.cat;
   $('aOut').textContent = curAlias.alias;
 }
@@ -1536,7 +1561,18 @@ $('cCopyCred').onclick = () => {
 // ---------- generator ----------
 const ADJ = ['silent','cyber','lunar','neon','cosmic','swift','golden','velvet','mystic','turbo','ghost','solar','royal','crimson','frosty','quantum'];
 const NOUN = ['wolf','falcon','tiger','comet','nebula','pixel','shadow','storm','blaze','vortex','raven','lotus','ember','drift','koi','phoenix'];
-function randName() { return ADJ[Math.random()*ADJ.length|0] + NOUN[Math.random()*NOUN.length|0] + (10+Math.random()*890|0); }
+const NAT_FIRST = ['budi','sari','dewi','rizky','andi','putri','agus','rina','fajar','maya','kevin','sinta','yoga','lestari','dimas','nadia','raka','intan','dian','fitri','eko','citra','gilang','hana','bima','ayu','tio','wulan'];
+const NAT_LAST = ['santoso','wijaya','kusuma','pratama','saputra','hidayat','ramadhan','utami','handoko','nugroho','setiawan','larasati','putra','anggraini','rahayu','suryani','wibowo','gunawan','halim','kurniawan'];
+function randName(mode) {
+  mode = mode || $('unameMode').value;
+  if (mode === 'natural') {
+    const f = NAT_FIRST[Math.random()*NAT_FIRST.length|0];
+    const l = NAT_LAST[Math.random()*NAT_LAST.length|0];
+    const n = 10 + Math.random()*89|0;
+    return Math.random() < .5 ? f + l + n : f + '.' + l + n;
+  }
+  return ADJ[Math.random()*ADJ.length|0] + NOUN[Math.random()*NOUN.length|0] + (10+Math.random()*890|0);
+}
 
 $('dice').onclick = () => { $('uname').value = randName(); };
 $('batch').oninput = () => { $('batchVal').textContent = $('batch').value + ' alamat'; };
